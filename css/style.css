@@ -423,29 +423,47 @@ h2 {
     box-shadow: inset 0 -3px 0 var(--color-danger), inset 0 0 0 1px var(--color-primary);
 }
 
-.calendar-day.has-schedule::after {
+/* 日付マスの上の帯は午前、下の帯は午後の予定を表します。 */
+.calendar-day::before,
+.calendar-day::after {
     position: absolute;
-    bottom: 5px;
-    left: 50%;
-    width: 5px;
+    right: 6px;
+    left: 6px;
     height: 5px;
-    border-radius: 50%;
-    background: var(--color-primary);
+    border-radius: 999px;
     content: "";
-    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
 }
 
-/* 重要な予定がある日は、赤い印と赤い数字で見落としにくくします。 */
+.calendar-day::before {
+    top: 5px;
+}
+
+.calendar-day::after {
+    bottom: 5px;
+}
+
+.calendar-day.has-am-schedule::before {
+    background: var(--color-am);
+    opacity: 1;
+}
+
+.calendar-day.has-pm-schedule::after {
+    background: var(--color-pm);
+    opacity: 1;
+}
+
+/* 重要予定が含まれる時間帯だけ、午前・午後の帯を赤色へ変えます。 */
+.calendar-day.has-important-am-schedule::before,
+.calendar-day.has-important-pm-schedule::after {
+    background: var(--color-important);
+}
+
+/* 重要な予定がある日は、日付の数字も赤くして見落としにくくします。 */
 .calendar-day.has-important-schedule {
     color: var(--color-important);
     font-weight: 900;
-}
-
-.calendar-day.has-important-schedule::after {
-    width: 10px;
-    height: 5px;
-    border-radius: 999px;
-    background: var(--color-important);
 }
 
 .calendar-note {
@@ -465,7 +483,8 @@ h2 {
 }
 
 .today-sample,
-.schedule-sample,
+.calendar-am-sample,
+.calendar-pm-sample,
 .important-sample {
     display: inline-block;
     width: 13px;
@@ -478,17 +497,23 @@ h2 {
     background: var(--color-today);
 }
 
-.schedule-sample {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--color-primary);
+.calendar-am-sample,
+.calendar-pm-sample,
+.important-sample {
+    width: 15px;
+    height: 5px;
+    border-radius: 999px;
+}
+
+.calendar-am-sample {
+    background: var(--color-am);
+}
+
+.calendar-pm-sample {
+    background: var(--color-pm);
 }
 
 .important-sample {
-    width: 10px;
-    height: 6px;
-    border-radius: 999px;
     background: var(--color-important);
 }
 
@@ -1499,10 +1524,19 @@ body[data-theme="dark"] .connection-badge.is-connected {
         border-radius: 10px;
     }
 
-    .calendar-day.has-schedule::after {
-        bottom: 3px;
-        width: 4px;
+    .calendar-day::before,
+    .calendar-day::after {
+        right: 4px;
+        left: 4px;
         height: 4px;
+    }
+
+    .calendar-day::before {
+        top: 3px;
+    }
+
+    .calendar-day::after {
+        bottom: 3px;
     }
 
     .clock-wrap {

@@ -354,6 +354,9 @@
             const date = new Date(year, month, day);
             const dateKey = toDateKey(date);
             const dateSchedules = schedulesForDate(dateKey);
+            /* 12:00を境にし、正午をまたぐ予定は午前・午後の両方へ表示します。 */
+            const amSchedules = dateSchedules.filter((schedule) => timeToMinutes(schedule.start) < 720);
+            const pmSchedules = dateSchedules.filter((schedule) => timeToMinutes(schedule.end) > 720);
             const importantScheduleCount = dateSchedules.filter((schedule) => schedule.important).length;
             const button = document.createElement("button");
 
@@ -382,6 +385,21 @@
             if (dateSchedules.length > 0) {
                 button.classList.add("has-schedule");
                 descriptionParts.push(`予定${dateSchedules.length}件`);
+            }
+            /* 日付マスの上を午前、下を午後として色の帯を付けます。 */
+            if (amSchedules.length > 0) {
+                button.classList.add("has-am-schedule");
+                descriptionParts.push(`午前にかかる予定${amSchedules.length}件`);
+                if (amSchedules.some((schedule) => schedule.important)) {
+                    button.classList.add("has-important-am-schedule");
+                }
+            }
+            if (pmSchedules.length > 0) {
+                button.classList.add("has-pm-schedule");
+                descriptionParts.push(`午後にかかる予定${pmSchedules.length}件`);
+                if (pmSchedules.some((schedule) => schedule.important)) {
+                    button.classList.add("has-important-pm-schedule");
+                }
             }
             if (importantScheduleCount > 0) {
                 button.classList.add("has-important-schedule");
