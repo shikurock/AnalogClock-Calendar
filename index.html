@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="カレンダーと時計で、今日の予定を見やすく管理するアプリです。">
+    <link rel="icon" href="img/icon.png?v=20260821f">
+    <link rel="stylesheet" href="css/style.css?v=20260821f">
+    <title>今日の日程を視覚的にわかりやすくする。「とけイベ」</title>
+</head>
+
+<body>
+    <a class="skip-link" href="#app">予定管理へ移動</a>
+
+    <!-- ===== 表示テーマ：右上で明るい表示と暗い表示を切り替えます ===== -->
+    <button id="themeToggle" class="theme-toggle" type="button" role="switch" aria-checked="false"
+        aria-label="ダークモードに切り替える">
+        <span id="themeToggleIcon" class="theme-toggle-icon" aria-hidden="true">☾</span>
+        <span id="themeToggleText">ダーク</span>
+    </button>
+
+    <main id="app" class="app-shell">
+        <!-- PCではカレンダーを左、時計を右に並べます。スマホでは今まで通り縦に並びます。 -->
+        <div class="dashboard-grid">
+            <!-- ===== 月間カレンダー：月の移動と日付の選択 ===== -->
+            <section class="calendar-card" aria-labelledby="calendar-heading">
+                <!-- ===== カレンダー上部：アプリ名と説明をカレンダー内に表示 ===== -->
+                <header class="site-header">
+                    <img src="img/header.png?v=20260821f" alt="とけイベのロゴ">
+                </header>
+
+                <div class="section-heading-row">
+                    <div>
+                        <p class="eyebrow">MONTHLY CALENDAR</p>
+                        <h2 id="calendar-heading">月間カレンダー</h2>
+                    </div>
+                    <button id="todayButton" class="text-button" type="button">今日へ戻る</button>
+                </div>
+
+                <div class="calendar-navigation">
+                    <button id="previousMonthButton" class="icon-button" type="button" aria-label="前の月を表示">‹</button>
+                    <p id="calendarMonthLabel" class="calendar-month" aria-live="polite"></p>
+                    <button id="nextMonthButton" class="icon-button" type="button" aria-label="次の月を表示">›</button>
+                </div>
+
+                <div class="calendar-weekdays" aria-hidden="true">
+                    <span>日</span>
+                    <span>月</span>
+                    <span>火</span>
+                    <span>水</span>
+                    <span>木</span>
+                    <span>金</span>
+                    <span>土</span>
+                </div>
+                <div id="calendarGrid" class="calendar-grid" role="group" aria-labelledby="calendarMonthLabel"></div>
+
+                <div class="calendar-note" aria-label="カレンダーの見方">
+                    <span><i class="today-sample"></i>今日</span>
+                    <span><i class="schedule-sample"></i>予定あり</span>
+                    <span><i class="important-sample"></i>重要予定</span>
+                </div>
+            </section>
+
+            <!-- ===== 時計：時刻の選択・予定の色分け・中央の追加ボタン ===== -->
+            <section class="clock-section" aria-labelledby="clock-heading">
+            <div class="clock-heading-group">
+                <p class="eyebrow">SCHEDULE CLOCK</p>
+                <h2 id="clock-heading">予定時計</h2>
+                <p id="selectedDateLabel" class="selected-date-label"></p>
+            </div>
+
+                <div class="schedule-legend" aria-label="予定の色分け">
+                    <span><i class="legend-dot am"></i>午前</span>
+                    <span><i class="legend-dot pm"></i>午後</span>
+                    <span><i class="legend-dot important"></i>重要</span>
+                </div>
+
+            <div class="clock-wrap">
+                <div id="clockFace" class="clock-face" aria-label="1時から12時までを選べる時計">
+                    <!-- 予定は、午前を外側の青い線、午後を内側のオレンジの線で描画します。 -->
+                    <svg class="schedule-rings" viewBox="0 0 100 100" aria-hidden="true">
+                        <circle class="ring-guide ring-guide-am" cx="50" cy="50" r="43"></circle>
+                        <circle class="ring-guide ring-guide-pm" cx="50" cy="50" r="36"></circle>
+                        <g id="scheduleArcs"></g>
+                    </svg>
+
+                    <!-- 1～12のボタンはJavaScriptでこの中に並べます。 -->
+                    <div id="hourButtons" class="hour-buttons"></div>
+
+                    <!-- 現在時刻を示す時計の針です。 -->
+                    <div id="hourHand" class="clock-hand hour-hand" aria-hidden="true"></div>
+                    <div id="minuteHand" class="clock-hand minute-hand" aria-hidden="true"></div>
+                    <div class="clock-pin" aria-hidden="true"></div>
+
+                    <!-- 時計の中央からも予定を追加できます。 -->
+                    <button id="centralAddButton" class="central-add-button" type="button" aria-label="予定を追加">
+                        <span aria-hidden="true">＋</span>
+                    </button>
+
+                    <!-- 時刻を押したときに出る、小さな吹き出しです。 -->
+                    <div id="hourPopover" class="hour-popover" role="dialog" aria-modal="false"
+                        aria-labelledby="hourPopoverTitle" aria-hidden="true" hidden>
+                        <p id="hourPopoverTitle" class="hour-popover-title"></p>
+                        <div class="period-switch" aria-label="午前または午後を選択">
+                            <button id="amButton" class="period-button am" type="button" aria-pressed="true">午前</button>
+                            <button id="pmButton" class="period-button pm" type="button"
+                                aria-pressed="false">午後</button>
+                        </div>
+                        <button id="popoverAddButton" class="popover-add-button" type="button">日程を追加</button>
+                    </div>
+
+                    <!-- 登録した予定の時刻になったとき、時計の前に表示するお知らせです。 -->
+                    <div id="scheduleAlert" class="schedule-alert" role="alertdialog" aria-live="assertive"
+                        aria-labelledby="scheduleAlertTitle" aria-describedby="scheduleAlertDetail" hidden>
+                        <div class="schedule-alert-message">
+                            <strong id="scheduleAlertTitle">予定の時刻になりました</strong>
+                            <p id="scheduleAlertDetail"></p>
+                        </div>
+                        <button id="scheduleAlertClose" class="schedule-alert-close" type="button"
+                            aria-label="予定のお知らせを閉じる">×</button>
+                    </div>
+                </div>
+            </div>
+
+                <p class="clock-help">数字を押すと、その時刻から予定を追加できます。</p>
+            </section>
+        </div>
+
+        <!-- ===== 今日の日程：開始・終了時刻とタイトルを一覧表示 ===== -->
+        <section class="today-schedule-card" aria-labelledby="today-schedule-heading">
+            <div class="section-heading-row">
+                <div>
+                    <p class="eyebrow">TODAY'S SCHEDULE</p>
+                    <h2 id="today-schedule-heading">今日の日程</h2>
+                </div>
+                <span id="todayScheduleCount" class="schedule-count">0件</span>
+            </div>
+            <ul id="todayScheduleList" class="today-schedule-list"></ul>
+        </section>
+
+        <!-- ===== Googleカレンダー連携：OAuth 2.0で安全に予定を読み書きします ===== -->
+        <section class="google-calendar-card" aria-labelledby="google-calendar-heading">
+            <div class="section-heading-row google-heading-row">
+                <div>
+                    <p class="eyebrow">GOOGLE CALENDAR</p>
+                    <h2 id="google-calendar-heading">Googleカレンダー連携</h2>
+                </div>
+                <span id="googleConnectionBadge" class="connection-badge">未接続</span>
+            </div>
+
+            <p class="google-calendar-description">
+                選んでいる月の予定を取り込めます。アクセストークンは保存せず、接続中だけ使います。取り込んだタイトルと時刻は、このブラウザー内に保存されます。
+            </p>
+
+            <div class="google-action-row">
+                <button id="googleConnectButton" class="google-connect-button" type="button">Googleに接続</button>
+                <button id="googleImportButton" class="secondary-button compact-button" type="button" disabled>
+                    表示中の月を取り込む
+                </button>
+                <button id="googleDisconnectButton" class="text-button google-disconnect-button" type="button" disabled>
+                    このタブの接続を切る
+                </button>
+            </div>
+            <p id="googleCalendarStatus" class="google-calendar-status" role="status">初回だけ設定が必要です。</p>
+
+            <!-- クライアントIDは秘密のパスワードではありません。アクセストークンはここへ保存しません。 -->
+            <details class="google-setup-details">
+                <summary>初回設定（OAuth 2.0 クライアントID）</summary>
+                <div class="google-setup-body">
+                    <label class="form-field google-client-field">
+                        <span>ウェブ アプリ用クライアントID</span>
+                        <input id="googleClientId" type="text" inputmode="url" autocomplete="off"
+                            placeholder="例：123456789-abc.apps.googleusercontent.com">
+                    </label>
+                    <button id="saveGoogleClientIdButton" class="secondary-button compact-button" type="button">
+                        クライアントIDを保存
+                    </button>
+                    <p class="google-client-warning">クライアントシークレットは入力・保存しないでください。</p>
+                    <ol class="google-setup-steps">
+                        <li>Google Cloudで「Google Calendar API」を有効にします。</li>
+                        <li>OAuth同意画面を作り、「ウェブ アプリ」のクライアントIDを発行します。</li>
+                        <li>承認済みJavaScript生成元に、このサイトのURLを登録します。</li>
+                    </ol>
+                    <a class="google-help-link" href="https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid"
+                        target="_blank" rel="noopener noreferrer">Google公式の設定手順を開く</a>
+                </div>
+            </details>
+        </section>
+    </main>
+
+    <!-- ===== 予定入力画面：中央の＋や時計の数字から開きます ===== -->
+    <div id="scheduleModal" class="modal-backdrop" hidden>
+        <section class="schedule-modal" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
+            <div class="modal-heading-row">
+                <div>
+                    <p class="eyebrow">NEW SCHEDULE</p>
+                    <h2 id="scheduleModalTitle">日程を追加</h2>
+                </div>
+                <button id="modalCloseButton" class="modal-close-button" type="button" aria-label="入力画面を閉じる">×</button>
+            </div>
+
+            <form id="scheduleForm" novalidate>
+                <label class="form-field">
+                    <span>日付</span>
+                    <input id="scheduleDate" name="date" type="date" required>
+                </label>
+
+                <label class="form-field">
+                    <span>タイトル</span>
+                    <input id="scheduleTitle" name="title" type="text" maxlength="60" autocomplete="off"
+                        placeholder="例：英語の授業" required>
+                </label>
+
+                <div class="time-field-row">
+                    <label class="form-field">
+                        <span>いつから</span>
+                        <input id="scheduleStart" name="start" type="time" step="60" required>
+                    </label>
+                    <span class="time-arrow" aria-hidden="true">→</span>
+                    <label class="form-field">
+                        <span>いつまで</span>
+                        <input id="scheduleEnd" name="end" type="time" step="60" required>
+                    </label>
+                </div>
+
+                <!-- 重要を選ぶと、カレンダーと一覧で赤く目立たせます。 -->
+                <label class="choice-row important-choice">
+                    <input id="scheduleImportant" name="important" type="checkbox">
+                    <span>
+                        <strong>重要な予定</strong>
+                        <small>カレンダーと一覧に赤色で表示します</small>
+                    </span>
+                </label>
+
+                <!-- Google接続中だけ表示し、追加する予定を同時にGoogleへ送れます。 -->
+                <label id="googleAddChoice" class="choice-row google-add-choice" hidden>
+                    <input id="addToGoogleCalendar" name="addToGoogle" type="checkbox">
+                    <span>
+                        <strong>Googleカレンダーにも追加</strong>
+                        <small>メインのカレンダーへ同じ予定を登録します</small>
+                    </span>
+                </label>
+
+                <p id="formError" class="form-error" role="alert" hidden></p>
+
+                <div class="form-actions">
+                    <button id="formCancelButton" class="secondary-button" type="button">キャンセル</button>
+                    <button class="primary-button" type="submit">追加する</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <!-- 操作結果を、画面読み上げソフトにも伝える場所です。 -->
+    <p id="liveStatus" class="visually-hidden" aria-live="polite"></p>
+
+    <script src="js/system.js?v=20260821f"></script>
+</body>
+
+</html>
