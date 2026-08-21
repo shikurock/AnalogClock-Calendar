@@ -1,0 +1,1604 @@
+/* =========================================================
+   1. ページ全体：色・文字・基本の余白
+   ========================================================= */
+:root {
+    --color-page: #f2f5f9;
+    --color-card: rgba(255, 255, 255, 0.94);
+    --color-text: #172033;
+    --color-muted: #68748a;
+    --color-line: #dfe5ed;
+    --color-primary: #2f68c5;
+    --color-primary-dark: #214e98;
+    --color-am: #2f78d0;
+    --color-am-soft: #dcecff;
+    --color-pm: #ee8a32;
+    --color-pm-soft: #ffead6;
+    --color-today: #fff0a8;
+    --color-danger: #d93c45;
+    --color-important: #cf2f3a;
+    --color-important-soft: #ffe5e8;
+    --color-surface: #ffffff;
+    --color-surface-soft: #f8fafc;
+    --color-surface-hover: #f1f5fa;
+    --color-input: #fbfcfe;
+    --color-seam: rgba(80, 108, 148, 0.24);
+    --shadow-card: 0 18px 45px rgba(38, 55, 83, 0.09);
+    --radius-card: 26px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    color-scheme: light;
+    scroll-behavior: auto;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    color: var(--color-text);
+    background:
+        radial-gradient(circle at 8% 6%, rgba(69, 132, 225, 0.17), transparent 29rem),
+        radial-gradient(circle at 92% 30%, rgba(242, 150, 70, 0.14), transparent 31rem),
+        radial-gradient(circle at 46% 96%, rgba(62, 178, 177, 0.09), transparent 30rem),
+        linear-gradient(135deg, #fbfdff 0%, #eef4fb 48%, #fff9f0 100%);
+    font-family: "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    line-height: 1.6;
+}
+
+/* ダークモードでは、文字が読みやすい暗い色へまとめて切り替えます。 */
+body[data-theme="dark"] {
+    --color-page: #101722;
+    --color-card: rgba(24, 34, 51, 0.97);
+    --color-text: #eef4ff;
+    --color-muted: #afbdd2;
+    --color-line: #3c485c;
+    --color-primary: #79abff;
+    --color-primary-dark: #b2d0ff;
+    --color-am: #68a9ff;
+    --color-am-soft: #28405e;
+    --color-pm: #ffad61;
+    --color-pm-soft: #5a3c27;
+    --color-today: #5d4f1d;
+    --color-danger: #ff6f7b;
+    --color-important: #ff727d;
+    --color-important-soft: #4b272e;
+    --color-surface: #1d2a3e;
+    --color-surface-soft: #182336;
+    --color-surface-hover: #26364e;
+    --color-input: #172235;
+    --color-seam: rgba(151, 177, 216, 0.28);
+    --shadow-card: 0 18px 45px rgba(0, 0, 0, 0.28);
+    color-scheme: dark;
+    background:
+        radial-gradient(circle at 7% 7%, rgba(68, 130, 225, 0.23), transparent 30rem),
+        radial-gradient(circle at 94% 32%, rgba(222, 119, 62, 0.14), transparent 33rem),
+        radial-gradient(circle at 45% 100%, rgba(70, 157, 171, 0.09), transparent 31rem),
+        linear-gradient(145deg, #0b1220 0%, #121d30 49%, #191522 100%);
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    color: inherit;
+}
+
+button:not(:disabled) {
+    cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+    outline: 3px solid rgba(47, 104, 197, 0.42);
+    outline-offset: 3px;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.skip-link {
+    position: fixed;
+    z-index: 100;
+    top: 12px;
+    left: 12px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    color: #ffffff;
+    background: var(--color-text);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.skip-link:focus {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* 右上のスイッチは、スクロールしてもいつでも押せる位置に固定します。 */
+.theme-toggle {
+    position: fixed;
+    z-index: 70;
+    top: 16px;
+    right: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    color: var(--color-text);
+    background: var(--color-surface);
+    box-shadow: 0 8px 22px rgba(28, 42, 63, 0.15);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.theme-toggle-icon {
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    color: #ffffff;
+    background: #263b5d;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+body[data-theme="dark"] .theme-toggle-icon {
+    color: #584600;
+    background: #ffe071;
+}
+
+/* =========================================================
+   2. カレンダー上部のタイトル：ロゴをカレンダー内に統合
+   ========================================================= */
+.site-header {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin: 0 0 22px;
+}
+
+.site-header img {
+    width: 100%;
+    max-width: 350px;
+    display: block;
+    margin: 0 auto;
+    align-items: center;
+}
+
+body[data-theme="dark"] .site-header {
+    background: transparent;
+    box-shadow: none;
+}
+
+/* =========================================================
+   3. アプリの共通カードと見出し
+   ========================================================= */
+.app-shell {
+    width: min(1180px, calc(100% - 32px));
+    margin: 0 auto;
+    padding-top: 18px;
+    padding-bottom: 80px;
+}
+
+.dashboard-grid {
+    position: relative;
+    overflow: visible;
+}
+
+.calendar-card,
+.clock-section,
+.today-schedule-card,
+.google-calendar-card {
+    position: relative;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    animation: seamless-reveal 420ms cubic-bezier(0.2, 0.72, 0.25, 1) both;
+    animation-delay: var(--reveal-delay, 0ms);
+}
+
+.calendar-card {
+    --reveal-delay: 30ms;
+}
+
+.clock-section {
+    --reveal-delay: 90ms;
+}
+
+.today-schedule-card {
+    --reveal-delay: 150ms;
+}
+
+.google-calendar-card {
+    --reveal-delay: 210ms;
+}
+
+.calendar-card,
+.today-schedule-card,
+.google-calendar-card {
+    padding: clamp(22px, 5vw, 38px);
+}
+
+.clock-section {
+    position: relative;
+    z-index: 2;
+    margin-top: 28px;
+    padding: clamp(26px, 5vw, 46px) clamp(14px, 5vw, 38px) 34px;
+    overflow: visible;
+}
+
+.today-schedule-card {
+    margin-top: 28px;
+}
+
+.google-calendar-card {
+    margin-top: 28px;
+}
+
+/* 大きな箱の代わりに、途中で消える細い線と余白でエリアを分けます。 */
+.today-schedule-card::before,
+.google-calendar-card::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-seam) 14%, var(--color-primary) 50%, var(--color-seam) 86%, transparent);
+    content: "";
+    pointer-events: none;
+}
+
+.section-heading-row,
+.modal-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.eyebrow {
+    margin: 0 0 2px;
+    color: var(--color-primary);
+    font-size: 0.69rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+}
+
+h2 {
+    margin: 0;
+    font-size: clamp(1.25rem, 3.5vw, 1.65rem);
+    line-height: 1.35;
+}
+
+.text-button {
+    padding: 8px 4px;
+    border: 0;
+    border-bottom: 1px solid currentColor;
+    color: var(--color-primary-dark);
+    background: transparent;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+/* =========================================================
+   4. 月間カレンダー
+   ========================================================= */
+.calendar-navigation {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    gap: 12px;
+    margin: 26px 0 18px;
+}
+
+.calendar-month {
+    margin: 0;
+    text-align: center;
+    font-size: clamp(1.08rem, 3.4vw, 1.35rem);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.icon-button,
+.modal-close-button {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--color-line);
+    border-radius: 50%;
+    background: var(--color-surface);
+    font-size: 1.65rem;
+    line-height: 1;
+}
+
+.icon-button:hover,
+.modal-close-button:hover {
+    background: var(--color-surface-hover);
+}
+
+.calendar-weekdays,
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.calendar-weekdays {
+    color: var(--color-muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.calendar-weekdays span:first-child {
+    color: #c7444c;
+}
+
+.calendar-weekdays span:last-child {
+    color: #3970b8;
+}
+
+.calendar-day,
+.calendar-blank {
+    min-width: 0;
+    height: clamp(42px, 7vw, 64px);
+}
+
+.calendar-day {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    background: transparent;
+    font-size: clamp(0.78rem, 2.5vw, 0.95rem);
+    font-weight: 650;
+}
+
+/* 曜日名だけでなく、カレンダー内の日付数字にも土日の色を付けます。 */
+.calendar-day.sunday {
+    color: #c7444c;
+    font-weight: 750;
+}
+
+.calendar-day.saturday {
+    color: #3970b8;
+    font-weight: 750;
+}
+
+.calendar-day:hover {
+    border-color: #c7d5e8;
+    background: var(--color-surface-hover);
+}
+
+.calendar-day.is-selected {
+    border-color: var(--color-primary);
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+/* 今日だけ、黄色い背景と赤い下線で強調します。 */
+.calendar-day.is-today {
+    color: #9f222c;
+    background: var(--color-today);
+    box-shadow: inset 0 -3px 0 var(--color-danger);
+    font-weight: 900;
+}
+
+.calendar-day.is-today.is-selected {
+    border-color: var(--color-primary);
+    box-shadow: inset 0 -3px 0 var(--color-danger), inset 0 0 0 1px var(--color-primary);
+}
+
+.calendar-day.has-schedule::after {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    content: "";
+    transform: translateX(-50%);
+}
+
+/* 重要な予定がある日は、赤い印と赤い数字で見落としにくくします。 */
+.calendar-day.has-important-schedule {
+    color: var(--color-important);
+    font-weight: 900;
+}
+
+.calendar-day.has-important-schedule::after {
+    width: 10px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--color-important);
+}
+
+.calendar-note {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 14px;
+    margin-top: 15px;
+    color: var(--color-muted);
+    font-size: 0.72rem;
+}
+
+.calendar-note span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.today-sample,
+.schedule-sample,
+.important-sample {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+}
+
+.today-sample {
+    border-bottom: 3px solid var(--color-danger);
+    border-radius: 3px;
+    background: var(--color-today);
+}
+
+.schedule-sample {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-primary);
+}
+
+.important-sample {
+    width: 10px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--color-important);
+}
+
+/* =========================================================
+   5. 時計：数字・針・予定の色つきリング
+   ========================================================= */
+.clock-heading-group {
+    text-align: center;
+}
+
+.selected-date-label {
+    margin: 6px 0 0;
+    color: var(--color-muted);
+    font-size: 0.86rem;
+}
+
+.schedule-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
+    margin: 18px 0 20px;
+    color: var(--color-muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.schedule-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+}
+
+.legend-dot.am {
+    background: var(--color-am);
+}
+
+.legend-dot.pm {
+    background: var(--color-pm);
+}
+
+.legend-dot.important {
+    background: var(--color-important);
+}
+
+.clock-wrap {
+    width: min(100%, 620px);
+    margin: 0 auto;
+    overflow: visible;
+}
+
+.clock-face {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    /* 吹き出しだけは時計の銀色の枠より前へ出せるようにします。 */
+    overflow: visible;
+    border: clamp(8px, 2vw, 14px) solid #ffffff;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.98) 0 42%, rgba(246, 249, 253, 0.96) 70%, #edf2f7 100%);
+    box-shadow:
+        0 22px 45px rgba(29, 49, 77, 0.17),
+        inset 0 0 0 1px #d9e0e8,
+        inset 0 0 24px rgba(65, 81, 104, 0.08);
+}
+
+.schedule-rings {
+    position: absolute;
+    z-index: 1;
+    inset: 2.5%;
+    width: 95%;
+    height: 95%;
+    overflow: visible;
+}
+
+.ring-guide,
+.schedule-arc {
+    fill: none;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.ring-guide {
+    stroke-width: 2.5;
+    opacity: 0.7;
+}
+
+.ring-guide-am {
+    stroke: var(--color-am-soft);
+}
+
+.ring-guide-pm {
+    stroke: var(--color-pm-soft);
+}
+
+.schedule-arc {
+    stroke-linecap: round;
+    stroke-width: 4.5;
+    opacity: 0.82;
+}
+
+.schedule-arc.am {
+    stroke: var(--color-am);
+}
+
+.schedule-arc.pm {
+    stroke: var(--color-pm);
+}
+
+.schedule-arc.important {
+    stroke: var(--color-important);
+    opacity: 0.96;
+}
+
+.hour-button {
+    position: absolute;
+    z-index: 5;
+    left: var(--hour-left);
+    top: var(--hour-top);
+    display: grid;
+    place-items: center;
+    width: clamp(34px, 9.5vw, 50px);
+    height: clamp(34px, 9.5vw, 50px);
+    padding: 0;
+    border: 1px solid rgba(197, 207, 220, 0.88);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 4px 11px rgba(37, 53, 78, 0.08);
+    font-size: clamp(0.86rem, 2.8vw, 1.08rem);
+    font-weight: 850;
+    transform: translate(-50%, -50%);
+}
+
+.hour-button:hover,
+.hour-button[aria-expanded="true"] {
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+    background: #ffffff;
+}
+
+.hour-button.has-am-schedule {
+    box-shadow: inset 0 4px 0 var(--color-am), 0 4px 11px rgba(37, 53, 78, 0.08);
+}
+
+.hour-button.has-pm-schedule {
+    border-bottom: 4px solid var(--color-pm);
+}
+
+.hour-button.has-important-schedule::after {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--color-surface);
+    border-radius: 50%;
+    background: var(--color-important);
+    content: "";
+}
+
+.clock-hand {
+    position: absolute;
+    z-index: 3;
+    bottom: 50%;
+    left: 50%;
+    border-radius: 999px;
+    background: #283348;
+    box-shadow: 0 2px 5px rgba(17, 25, 39, 0.16);
+    transform: translateX(-50%) rotate(var(--rotation, 0deg));
+    transform-origin: 50% 100%;
+}
+
+.hour-hand {
+    width: clamp(4px, 0.9vw, 6px);
+    height: 21%;
+}
+
+.minute-hand {
+    width: clamp(2px, 0.55vw, 4px);
+    height: 29%;
+    background: #526079;
+}
+
+.clock-pin {
+    position: absolute;
+    z-index: 6;
+    top: 50%;
+    left: 50%;
+    width: clamp(12px, 3vw, 18px);
+    height: clamp(12px, 3vw, 18px);
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    background: #283348;
+    transform: translate(-50%, -50%);
+}
+
+/* 中央の＋は濃い背景にして、数字のボタンと見分けやすくします。 */
+.central-add-button {
+    position: absolute;
+    z-index: 8;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: clamp(54px, 13vw, 72px);
+    height: clamp(54px, 13vw, 72px);
+    padding: 0;
+    border: 5px solid rgba(255, 255, 255, 0.92);
+    border-radius: 50%;
+    color: #ffffff;
+    background: #1d2c46;
+    box-shadow: 0 8px 18px rgba(20, 36, 62, 0.22);
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    font-weight: 400;
+    line-height: 1;
+    transform: translate(-50%, -50%);
+    transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.central-add-button:hover {
+    background: #2a4167;
+    transform: translate(-50%, -50%) scale(1.045);
+}
+
+.clock-help {
+    margin: 19px 0 0;
+    color: var(--color-muted);
+    font-size: 0.78rem;
+    text-align: center;
+}
+
+/* =========================================================
+   6. 時計の吹き出し
+   ========================================================= */
+.hour-popover {
+    position: absolute;
+    z-index: 60;
+    width: min(210px, 66%);
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    color: #ffffff;
+    background: rgba(28, 40, 61, 0.96);
+    box-shadow: 0 14px 30px rgba(19, 29, 45, 0.25);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hour-popover.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.hour-popover-title {
+    margin: 0 0 9px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.period-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.period-button,
+.popover-add-button {
+    min-height: 36px;
+    border: 0;
+    border-radius: 9px;
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.period-button {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.period-button.am[aria-pressed="true"] {
+    background: var(--color-am);
+}
+
+.period-button.pm[aria-pressed="true"] {
+    background: var(--color-pm);
+}
+
+.popover-add-button {
+    width: 100%;
+    color: var(--color-text);
+    background: #ffffff;
+}
+
+/* =========================================================
+   7. 予定時刻になったときの、時計前のお知らせ
+   ========================================================= */
+.schedule-alert {
+    position: absolute;
+    z-index: 30;
+    inset: 2%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8%;
+    border: 1px solid rgba(255, 255, 255, 0.66);
+    border-radius: 50%;
+    color: #ffffff;
+    background: rgba(31, 111, 207, 0.52);
+    /* ぼかし処理は重いため使わず、半透明の色だけで時計をうっすら見せます。 */
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.schedule-alert.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.schedule-alert-message {
+    width: min(92%, 480px);
+    max-width: 92%;
+    max-height: 60%;
+    padding: clamp(10px, 3vw, 18px);
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    border-radius: 18px;
+    background: rgba(17, 48, 91, 0.76);
+    box-shadow: 0 8px 22px rgba(12, 38, 75, 0.2);
+}
+
+.schedule-alert strong {
+    display: block;
+    font-size: clamp(1.05rem, 4.2vw, 1.75rem);
+    font-weight: 900;
+    text-shadow: 0 2px 10px rgba(17, 52, 99, 0.35);
+}
+
+.schedule-alert p {
+    max-width: 100%;
+    margin: 9px 0 0;
+    font-size: clamp(0.8rem, 3vw, 1.05rem);
+    font-weight: 750;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.schedule-alert-close {
+    display: grid;
+    place-items: center;
+    width: clamp(44px, 11vw, 58px);
+    height: clamp(44px, 11vw, 58px);
+    padding: 0 0 3px;
+    border: 4px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    color: #ffffff;
+    background: var(--color-danger);
+    box-shadow: 0 7px 16px rgba(104, 17, 24, 0.24);
+    font-size: clamp(1.35rem, 4vw, 1.8rem);
+    font-weight: 800;
+    line-height: 1;
+    margin-top: 14px;
+    flex: 0 0 auto;
+}
+
+/* =========================================================
+   8. 今日の日程一覧
+   ========================================================= */
+.schedule-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 54px;
+    min-height: 34px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    color: var(--color-primary-dark);
+    background: #eaf1fc;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.today-schedule-list {
+    padding: 0;
+    margin: 22px 0 0;
+    list-style: none;
+}
+
+.schedule-item {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) 38px;
+    align-items: center;
+    gap: 18px;
+    min-height: 70px;
+    padding: 13px 10px;
+    border-top: 1px solid var(--color-line);
+    text-align: left;
+}
+
+.schedule-item:last-child {
+    border-bottom: 1px solid var(--color-line);
+}
+
+.schedule-time {
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.87rem;
+    font-weight: 750;
+}
+
+.schedule-time::before {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 10px;
+    border-radius: 50%;
+    background: var(--schedule-color, var(--color-am));
+    content: "";
+}
+
+.schedule-title {
+    min-width: 0;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.schedule-item.is-important {
+    border-left: 4px solid var(--color-important);
+    background: linear-gradient(90deg, var(--color-important-soft), transparent 46%);
+}
+
+.schedule-item.is-important .schedule-time,
+.schedule-item.is-important .schedule-title {
+    color: var(--color-important);
+    font-weight: 900;
+}
+
+.schedule-item.is-important .schedule-time::before {
+    background: var(--color-important);
+}
+
+.schedule-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    margin-left: 8px;
+    padding: 2px 7px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: var(--color-muted);
+    font-size: 0.65rem;
+    font-weight: 800;
+    vertical-align: middle;
+}
+
+.schedule-badge.important {
+    color: var(--color-important);
+}
+
+.schedule-badge.google {
+    color: var(--color-primary-dark);
+}
+
+.delete-schedule-button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0 0 2px;
+    border: 0;
+    border-radius: 50%;
+    color: #8b4a50;
+    background: #f9ecee;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.delete-schedule-button:hover {
+    color: #ffffff;
+    background: var(--color-danger);
+}
+
+.empty-schedule {
+    padding: 32px 16px;
+    border: 0;
+    border-radius: 0;
+    color: var(--color-muted);
+    background: transparent;
+    font-size: 0.86rem;
+    text-align: center;
+}
+
+/* =========================================================
+   9. 予定を入力する画面（モーダル）
+   ========================================================= */
+.modal-backdrop {
+    position: fixed;
+    z-index: 80;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(20, 29, 44, 0.48);
+    opacity: 0;
+}
+
+.modal-backdrop.is-visible {
+    opacity: 1;
+}
+
+.schedule-modal {
+    width: min(520px, 100%);
+    max-height: calc(100vh - 40px);
+    padding: clamp(22px, 5vw, 34px);
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 24px;
+    background: var(--color-surface);
+    box-shadow: 0 26px 70px rgba(17, 26, 40, 0.24);
+    transform: translate3d(0, 8px, 0) scale(0.985);
+    transition: transform 190ms ease;
+}
+
+.modal-backdrop.is-visible .schedule-modal {
+    transform: translate3d(0, 0, 0) scale(1);
+}
+
+.modal-close-button {
+    flex: 0 0 auto;
+    color: var(--color-muted);
+    font-size: 1.3rem;
+}
+
+#scheduleForm {
+    margin-top: 24px;
+}
+
+.form-field {
+    display: grid;
+    gap: 7px;
+    margin-top: 17px;
+}
+
+.form-field>span {
+    color: var(--color-muted);
+    font-size: 0.79rem;
+    font-weight: 800;
+}
+
+.form-field input {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid #cbd4e0;
+    border-radius: 11px;
+    color: var(--color-text);
+    background: var(--color-input);
+}
+
+.form-field input:hover {
+    border-color: #aab9cc;
+}
+
+.time-field-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 26px minmax(0, 1fr);
+    align-items: end;
+    gap: 9px;
+}
+
+.time-arrow {
+    padding-bottom: 12px;
+    color: var(--color-muted);
+    text-align: center;
+}
+
+.form-error {
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border-left: 4px solid var(--color-danger);
+    border-radius: 8px;
+    color: #9c252d;
+    background: #fff1f2;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* 重要・Google追加の選択欄は、チェックの意味を文章でも説明します。 */
+.choice-row {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: start;
+    gap: 11px;
+    margin-top: 17px;
+    padding: 13px 14px;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-surface-soft);
+}
+
+.choice-row input {
+    width: 18px;
+    height: 18px;
+    margin: 3px 0 0;
+    accent-color: var(--color-primary);
+}
+
+.important-choice input {
+    accent-color: var(--color-important);
+}
+
+.choice-row span,
+.choice-row strong,
+.choice-row small {
+    display: block;
+}
+
+.choice-row strong {
+    font-size: 0.84rem;
+}
+
+.choice-row small {
+    margin-top: 2px;
+    color: var(--color-muted);
+    font-size: 0.72rem;
+}
+
+.form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.primary-button,
+.secondary-button {
+    min-height: 48px;
+    padding: 10px 16px;
+    border-radius: 11px;
+    font-weight: 800;
+}
+
+.primary-button {
+    border: 1px solid var(--color-primary);
+    color: #ffffff;
+    background: var(--color-primary);
+}
+
+.primary-button:hover {
+    background: var(--color-primary-dark);
+}
+
+.secondary-button {
+    border: 1px solid #cdd6e2;
+    color: var(--color-text);
+    background: var(--color-surface);
+}
+
+/* =========================================================
+   10. Googleカレンダー連携
+   ========================================================= */
+.google-calendar-card {
+    border-top: 0;
+}
+
+.google-calendar-card::before {
+    background: linear-gradient(90deg, transparent 0%, #4285f4 25%, #34a853 44%, #fbbc05 63%, #ea4335 80%, transparent 100%);
+    opacity: 0.58;
+}
+
+.google-heading-row {
+    align-items: flex-start;
+}
+
+.connection-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 66px;
+    min-height: 32px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: var(--color-muted);
+    background: var(--color-surface-soft);
+    font-size: 0.72rem;
+    font-weight: 850;
+}
+
+.connection-badge.is-connected {
+    color: #17613a;
+    background: #dff4e7;
+}
+
+.google-calendar-description,
+.google-calendar-status {
+    color: var(--color-muted);
+    font-size: 0.82rem;
+}
+
+.google-calendar-description {
+    margin: 16px 0 0;
+}
+
+.google-calendar-status {
+    min-height: 1.6em;
+    margin: 12px 0 0;
+}
+
+.google-calendar-status.is-error {
+    color: var(--color-important);
+    font-weight: 800;
+}
+
+.google-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.google-connect-button,
+.compact-button {
+    min-height: 42px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 800;
+}
+
+.google-connect-button {
+    border: 1px solid #286bd6;
+    color: #ffffff;
+    background: #286bd6;
+}
+
+.google-connect-button:hover {
+    background: #1857ba;
+}
+
+.google-disconnect-button {
+    margin-left: auto;
+}
+
+.google-action-row button:disabled,
+.form-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.52;
+}
+
+/* ダークモードで、白く固定されていた細かな部品も暗い色へ合わせます。 */
+body[data-theme="dark"] .calendar-day:hover {
+    border-color: #60728e;
+}
+
+body[data-theme="dark"] .calendar-day.is-today {
+    color: #ffe78a;
+}
+
+body[data-theme="dark"] .calendar-weekdays span:first-child,
+body[data-theme="dark"] .calendar-day.sunday:not(.has-important-schedule) {
+    color: #ff9ba3;
+}
+
+body[data-theme="dark"] .calendar-weekdays span:last-child,
+body[data-theme="dark"] .calendar-day.saturday:not(.has-important-schedule) {
+    color: #91c0ff;
+}
+
+body[data-theme="dark"] .clock-face {
+    border-color: #314158;
+    background:
+        radial-gradient(circle at 50% 48%, #26354a 0 42%, #202e42 70%, #192538 100%);
+    box-shadow:
+        0 22px 45px rgba(0, 0, 0, 0.34),
+        inset 0 0 0 1px #465771,
+        inset 0 0 24px rgba(0, 0, 0, 0.2);
+}
+
+body[data-theme="dark"] .hour-button {
+    border-color: #56657a;
+    color: var(--color-text);
+    background: rgba(30, 43, 63, 0.93);
+}
+
+body[data-theme="dark"] .hour-button:hover,
+body[data-theme="dark"] .hour-button[aria-expanded="true"] {
+    border-color: var(--color-primary);
+    color: #dbe9ff;
+    background: #2b3b53;
+}
+
+body[data-theme="dark"] .clock-hand,
+body[data-theme="dark"] .clock-pin {
+    background: #e2eaf7;
+}
+
+body[data-theme="dark"] .minute-hand {
+    background: #aebbd0;
+}
+
+body[data-theme="dark"] .clock-pin {
+    border-color: #233248;
+}
+
+body[data-theme="dark"] .popover-add-button {
+    color: var(--color-text);
+    background: #2d405d;
+}
+
+body[data-theme="dark"] .schedule-count {
+    color: #c9ddff;
+    background: #263a57;
+}
+
+body[data-theme="dark"] .form-error {
+    color: #ffb5bb;
+    background: #47252c;
+}
+
+body[data-theme="dark"] .delete-schedule-button {
+    color: #ffadb4;
+    background: #47262d;
+}
+
+body[data-theme="dark"] .connection-badge.is-connected {
+    color: #9ae4b8;
+    background: #1d4631;
+}
+
+/* PCだけ、カレンダーを左・時計を右に並べて縦の長さを短くします。 */
+@media (min-width: 1000px) {
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.93fr) minmax(0, 1.07fr);
+        align-items: stretch;
+        gap: 28px;
+    }
+
+    .dashboard-grid::before {
+        position: absolute;
+        top: 4%;
+        bottom: 4%;
+        left: 46.6%;
+        width: 1px;
+        background: linear-gradient(180deg, transparent, var(--color-seam) 16%, var(--color-primary) 50%, var(--color-seam) 84%, transparent);
+        content: "";
+        pointer-events: none;
+    }
+
+    .calendar-card,
+    .clock-section {
+        height: 100%;
+    }
+
+    .calendar-card {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .calendar-card .calendar-note {
+        margin-top: auto;
+        padding-top: 15px;
+    }
+
+    .clock-section {
+        margin-top: 0;
+        padding: 32px 24px 34px;
+    }
+
+    .calendar-card {
+        padding: 32px 28px;
+    }
+
+    .clock-wrap {
+        width: min(100%, 520px);
+    }
+}
+
+/* 画面を開いたときだけ、各エリアが少し下から順番に現れます。 */
+.hour-popover,
+.schedule-alert,
+.modal-backdrop,
+.skip-link {
+    transition: opacity 180ms ease;
+}
+
+@keyframes seamless-reveal {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* マウスが使える端末だけ、押せる部品を軽く浮かせます。 */
+@media (hover: hover) {
+
+    .theme-toggle,
+    .icon-button,
+    .google-connect-button,
+    .primary-button,
+    .secondary-button {
+        transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+    }
+
+    .theme-toggle:hover,
+    .icon-button:hover,
+    .google-connect-button:hover,
+    .primary-button:hover,
+    .secondary-button:hover {
+        transform: translateY(-2px);
+    }
+}
+
+/* =========================================================
+   11. スマートフォン表示
+   ========================================================= */
+@media (max-width: 600px) {
+    .site-header {
+        width: 100%;
+        margin-top: 34px;
+        margin-bottom: 16px;
+        border-radius: 18px;
+    }
+
+    .site-header img {
+        max-width: 300px;
+    }
+
+    .app-shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 0;
+        padding-bottom: 46px;
+    }
+
+    .theme-toggle {
+        top: 10px;
+        right: 10px;
+        gap: 5px;
+        min-height: 42px;
+        padding: 7px 10px;
+        font-size: 0.7rem;
+    }
+
+    .theme-toggle-icon {
+        width: 23px;
+        height: 23px;
+    }
+
+    .calendar-card,
+    .clock-section,
+    .today-schedule-card,
+    .google-calendar-card {
+        border-radius: 0;
+    }
+
+    .calendar-card,
+    .today-schedule-card,
+    .google-calendar-card {
+        padding: 20px 14px;
+    }
+
+    .clock-section {
+        margin-top: 18px;
+        padding: 24px 6px 28px;
+    }
+
+    .today-schedule-card {
+        margin-top: 18px;
+    }
+
+    .google-calendar-card {
+        margin-top: 18px;
+    }
+
+    .calendar-navigation {
+        grid-template-columns: 40px 1fr 40px;
+        margin: 20px 0 14px;
+    }
+
+    .icon-button {
+        width: 40px;
+        height: 40px;
+    }
+
+    .calendar-weekdays,
+    .calendar-grid {
+        gap: 3px;
+    }
+
+    .calendar-day {
+        border-radius: 10px;
+    }
+
+    .calendar-day.has-schedule::after {
+        bottom: 3px;
+        width: 4px;
+        height: 4px;
+    }
+
+    .clock-wrap {
+        width: 100%;
+    }
+
+    .hour-popover {
+        padding: 11px;
+        border-radius: 13px;
+    }
+
+    .schedule-item {
+        grid-template-columns: 103px minmax(0, 1fr) 34px;
+        gap: 10px;
+        padding: 12px 2px;
+    }
+
+    .schedule-time {
+        font-size: 0.76rem;
+    }
+
+    .schedule-time::before {
+        width: 6px;
+        height: 6px;
+        margin-right: 6px;
+    }
+
+    .schedule-title {
+        font-size: 0.88rem;
+    }
+
+    .delete-schedule-button {
+        width: 32px;
+        height: 32px;
+    }
+
+    .google-action-row {
+        align-items: stretch;
+    }
+
+    .google-connect-button,
+    .google-action-row .compact-button {
+        flex: 1 1 160px;
+    }
+
+    .google-disconnect-button {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 380px) {
+    .section-heading-row {
+        align-items: flex-start;
+    }
+
+    .text-button {
+        font-size: 0.73rem;
+    }
+
+    .calendar-card,
+    .today-schedule-card,
+    .google-calendar-card {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+
+    .time-field-row {
+        grid-template-columns: 1fr;
+    }
+
+    .time-arrow {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+    }
+
+    .calendar-card,
+    .clock-section,
+    .today-schedule-card,
+    .google-calendar-card {
+        animation-delay: 0s !important;
+        transform: none !important;
+    }
+
+    .schedule-modal {
+        transform: none !important;
+    }
+}
