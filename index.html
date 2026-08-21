@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="カレンダーと時計で、今日の予定を見やすく管理するアプリです。">
-    <link rel="icon" href="img/icon.png?v=20260821k">
-    <link rel="stylesheet" href="css/style.css?v=20260821k">
+    <link rel="icon" href="img/icon.png?v=20260821m">
+    <link rel="stylesheet" href="css/style.css?v=20260821m">
     <title>今日の日程を視覚的にわかりやすくする。「とけイベ」</title>
 </head>
 
@@ -27,7 +27,7 @@
             <section class="calendar-card" aria-labelledby="calendar-heading">
                 <!-- ===== カレンダー上部：アプリ名と説明をカレンダー内に表示 ===== -->
                 <header class="site-header">
-                    <img src="img/header.png?v=20260821k" alt="とけイベのロゴ">
+                    <img src="img/header.png?v=20260821m" alt="とけイベのロゴ">
                 </header>
 
                 <div class="section-heading-row">
@@ -112,7 +112,7 @@
                     </div>
 
                     <!-- 登録した予定の時刻になったとき、時計の前に表示するお知らせです。 -->
-                    <div id="scheduleAlert" class="schedule-alert" role="alertdialog" aria-live="assertive"
+                    <div id="scheduleAlert" class="schedule-alert" role="alert"
                         aria-labelledby="scheduleAlertTitle" aria-describedby="scheduleAlertDetail" hidden>
                         <div class="schedule-alert-message">
                             <strong id="scheduleAlertTitle">予定の時刻になりました</strong>
@@ -121,10 +121,34 @@
                         <button id="scheduleAlertClose" class="schedule-alert-close" type="button"
                             aria-label="予定のお知らせを閉じる">×</button>
                     </div>
+
+                    <!-- 登録したリマインド時刻になったときは、黄色いお知らせを前面に表示します。 -->
+                    <div id="reminderAlert" class="schedule-alert reminder-alert" role="alert"
+                        aria-labelledby="reminderAlertTitle"
+                        aria-describedby="reminderAlertDetail" hidden>
+                        <div class="schedule-alert-message">
+                            <strong id="reminderAlertTitle">リマインドの時間になりました</strong>
+                            <p id="reminderAlertDetail"></p>
+                        </div>
+                        <button id="reminderAlertClose" class="schedule-alert-close" type="button"
+                            aria-label="リマインドのお知らせを閉じる">×</button>
+                    </div>
                 </div>
             </div>
 
                 <p class="clock-help">数字を押すと、その時刻から予定を追加できます。</p>
+
+                <!-- 通知の許可は、利用者がこのボタンを押したときだけブラウザーへ確認します。 -->
+                <div id="notificationPermissionPanel" class="notification-permission-panel">
+                    <div>
+                        <strong>ブラウザ通知</strong>
+                        <p id="notificationPermissionStatus" role="status">
+                            通知の利用状況を確認しています。
+                        </p>
+                    </div>
+                    <button id="notificationPermissionButton" class="secondary-button notification-permission-button"
+                        type="button">通知を許可</button>
+                </div>
             </section>
         </div>
 
@@ -202,6 +226,22 @@
                     </label>
                 </div>
 
+                <!-- 予定より何分前に知らせるかを、予定ごとに選びます。 -->
+                <label class="form-field reminder-field">
+                    <span>リマインド</span>
+                    <select id="scheduleReminder" name="reminderMinutes">
+                        <option value="0">なし</option>
+                        <option value="1">1分前</option>
+                        <option value="5">5分前</option>
+                        <option value="10">10分前</option>
+                        <option value="15">15分前</option>
+                        <option value="30">30分前</option>
+                        <option value="60">1時間前</option>
+                        <option value="1440">1日前</option>
+                    </select>
+                    <small class="form-help">選んだ時刻には黄色い画面で知らせます。予定の開始時刻も通知します。ブラウザ通知は、このページを開いている間に動きます。</small>
+                </label>
+
                 <!-- 重要を選ぶと、カレンダーと一覧で赤く目立たせます。 -->
                 <label class="choice-row important-choice">
                     <input id="scheduleImportant" name="important" type="checkbox">
@@ -233,7 +273,7 @@
     <!-- 操作結果を、画面読み上げソフトにも伝える場所です。 -->
     <p id="liveStatus" class="visually-hidden" aria-live="polite"></p>
 
-    <script src="js/system.js?v=20260821k"></script>
+    <script src="js/system.js?v=20260821m"></script>
 </body>
 
 </html>

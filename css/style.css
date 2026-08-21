@@ -17,6 +17,9 @@
     --color-danger: #d93c45;
     --color-important: #cf2f3a;
     --color-important-soft: #ffe5e8;
+    --color-reminder: #e7b91f;
+    --color-reminder-soft: #fff4b8;
+    --color-reminder-text: #433300;
     --color-surface: #ffffff;
     --color-surface-soft: #f8fafc;
     --color-surface-hover: #f1f5fa;
@@ -67,6 +70,9 @@ body[data-theme="dark"] {
     --color-danger: #ff6f7b;
     --color-important: #ff727d;
     --color-important-soft: #4b272e;
+    --color-reminder: #ffd34f;
+    --color-reminder-soft: #fff0a1;
+    --color-reminder-text: #342700;
     --color-surface: #1d2a3e;
     --color-surface-soft: #182336;
     --color-surface-hover: #26364e;
@@ -86,7 +92,8 @@ html[data-theme="dark"] {
 }
 
 button,
-input {
+input,
+select {
     font: inherit;
 }
 
@@ -100,6 +107,7 @@ button:not(:disabled) {
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 a:focus-visible,
 summary:focus-visible {
     outline: 3px solid rgba(47, 104, 197, 0.42);
@@ -1041,6 +1049,27 @@ h2 {
     flex: 0 0 auto;
 }
 
+/* リマインドは、予定開始の青いお知らせと区別できる黄色で表示します。 */
+.reminder-alert {
+    z-index: 31;
+    color: var(--color-reminder-text);
+    background: rgba(244, 202, 58, 0.82);
+    border-color: rgba(105, 80, 0, 0.28);
+}
+
+.reminder-alert .schedule-alert-message {
+    border-color: rgba(111, 83, 0, 0.22);
+    color: var(--color-reminder-text);
+    background: rgba(255, 247, 190, 0.95);
+    box-shadow: 0 8px 22px rgba(92, 66, 0, 0.2);
+}
+
+.reminder-alert strong,
+.reminder-alert p {
+    color: var(--color-reminder-text);
+    text-shadow: none;
+}
+
 /* =========================================================
    8. 今日の日程一覧
    ========================================================= */
@@ -1139,6 +1168,11 @@ h2 {
     color: var(--color-primary-dark);
 }
 
+.schedule-badge.reminder {
+    color: #806000;
+    background: var(--color-reminder-soft);
+}
+
 .delete-schedule-button {
     display: grid;
     place-items: center;
@@ -1225,7 +1259,8 @@ h2 {
     font-weight: 800;
 }
 
-.form-field input {
+.form-field input,
+.form-field select {
     width: 100%;
     min-width: 0;
     min-height: 48px;
@@ -1236,8 +1271,60 @@ h2 {
     background: var(--color-input);
 }
 
-.form-field input:hover {
+.form-field input:hover,
+.form-field select:hover {
     border-color: #aab9cc;
+}
+
+.form-help {
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    line-height: 1.55;
+}
+
+/* ブラウザー通知は、利用者が許可ボタンを押したときだけ有効にします。 */
+.notification-permission-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 18px;
+    padding: 13px 0;
+    border-top: 1px solid var(--color-line);
+    border-bottom: 1px solid var(--color-line);
+}
+
+.notification-permission-panel strong {
+    display: block;
+    font-size: 0.84rem;
+}
+
+.notification-permission-panel p {
+    margin: 3px 0 0;
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    line-height: 1.5;
+}
+
+.notification-permission-panel[data-state="granted"] strong {
+    color: #187044;
+}
+
+[data-theme="dark"] .notification-permission-panel[data-state="granted"] strong {
+    color: #78dca8;
+}
+
+.notification-permission-panel[data-state="denied"] strong,
+.notification-permission-panel[data-state="unsupported"] strong {
+    color: var(--color-important);
+}
+
+.notification-permission-button {
+    flex: 0 0 auto;
+    min-width: 132px;
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 0.76rem;
 }
 
 .time-field-row {
@@ -1758,6 +1845,15 @@ body[data-theme="dark"] .connection-badge.is-connected {
     .google-disconnect-button {
         width: 100%;
         margin-left: 0;
+    }
+
+    .notification-permission-panel {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .notification-permission-button {
+        width: 100%;
     }
 }
 

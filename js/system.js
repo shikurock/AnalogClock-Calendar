@@ -6,9 +6,14 @@
        ======================================================= */
     const STORAGE_KEY = "tokeibe.schedules.v1";
     const DISMISSED_ALERTS_KEY = "tokeibe.dismissed-alerts.v1";
+    const NOTIFICATION_HISTORY_KEY = "tokeibe.notification-history.v1";
     const THEME_STORAGE_KEY = "tokeibe.theme.v1";
     const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
     const FADE_DURATION = 180;
+    const NOTIFICATION_GRACE_MS = 5 * 60 * 1000;
+    const NOTIFICATION_HISTORY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+    const SERVICE_WORKER_READY_TIMEOUT_MS = 3000;
+    const REMINDER_MINUTE_OPTIONS = Object.freeze([0, 1, 5, 10, 15, 30, 60, 1440]);
     const GOOGLE_IDENTITY_SCRIPT = "https://accounts.google.com/gsi/client";
     const GOOGLE_CALENDAR_API = "https://www.googleapis.com/calendar/v3";
     const GOOGLE_SCOPE = "https://www.googleapis.com/auth/calendar.events.owned";
@@ -59,8 +64,13 @@
         pmButton: document.getElementById("pmButton"),
         popoverAddButton: document.getElementById("popoverAddButton"),
         scheduleAlert: document.getElementById("scheduleAlert"),
+        scheduleAlertTitle: document.getElementById("scheduleAlertTitle"),
         scheduleAlertDetail: document.getElementById("scheduleAlertDetail"),
         scheduleAlertClose: document.getElementById("scheduleAlertClose"),
+        reminderAlert: document.getElementById("reminderAlert"),
+        reminderAlertTitle: document.getElementById("reminderAlertTitle"),
+        reminderAlertDetail: document.getElementById("reminderAlertDetail"),
+        reminderAlertClose: document.getElementById("reminderAlertClose"),
         todayScheduleCount: document.getElementById("todayScheduleCount"),
         todayScheduleList: document.getElementById("todayScheduleList"),
         scheduleModal: document.getElementById("scheduleModal"),
@@ -69,6 +79,7 @@
         scheduleTitle: document.getElementById("scheduleTitle"),
         scheduleStart: document.getElementById("scheduleStart"),
         scheduleEnd: document.getElementById("scheduleEnd"),
+        scheduleReminder: document.getElementById("scheduleReminder"),
         formError: document.getElementById("formError"),
         modalCloseButton: document.getElementById("modalCloseButton"),
         formCancelButton: document.getElementById("formCancelButton"),
@@ -78,6 +89,9 @@
         themeToggle: document.getElementById("themeToggle"),
         themeToggleIcon: document.getElementById("themeToggleIcon"),
         themeToggleText: document.getElementById("themeToggleText"),
+        notificationPermissionPanel: document.getElementById("notificationPermissionPanel"),
+        notificationPermissionStatus: document.getElementById("notificationPermissionStatus"),
+        notificationPermissionButton: document.getElementById("notificationPermissionButton"),
         googleConnectButton: document.getElementById("googleConnectButton"),
         googleImportButton: document.getElementById("googleImportButton"),
         googleDisconnectButton: document.getElementById("googleDisconnectButton"),
@@ -99,16 +113,23 @@
     let popoverHideTimer = null;
     let modalHideTimer = null;
     let alertHideTimer = null;
+    let reminderAlertHideTimer = null;
     let currentAlertKey = "";
     let currentAlertDateKey = "";
     let currentAlertSchedules = [];
+    let currentReminderAlertKey = "";
+    let currentReminderDismissalKeys = [];
     let tickTimer = null;
+    let notificationServiceWorkerPromise = null;
     let googleScriptPromise = null;
     let googleTokenClient = null;
     let googleAccessToken = "";
     let googleTokenExpiresAt = 0;
     let googleImportController = null;
     const dismissedAlertKeys = loadDismissedAlerts();
+    const notificationHistory = loadNotificationHistory();
+    const pendingNotificationKeys = new Set();
+    const failedNotificationKeys = new Set();
 
     /* =======================================================
        2. 日付と時刻を安全に扱う、小さな道具
@@ -163,6 +184,77 @@
         return `${padNumber(Math.floor(safeValue / 60))}:${padNumber(safeValue % 60)}`;
     }
 
+    function normalizeReminderMinutes(value) {
+        const reminderMinutes = Number(value);
+        return REMINDER_MINUTE_OPTIONS.includes(reminderMinutes) ? reminderMinutes : 0;
+    }
+
+    function formatReminderLabel(reminderMinutes) {
+        const safeMinutes = normalizeReminderMinutes(reminderMinutes);
+        if (safeMinutes === 1440) {
+            return "1日前に通知";
+        }
+        if (safeMinutes === 60) {
+            return "1時間前に通知";
+        }
+        return safeMinutes > 0 ? `${safeMinutes}分前に通知` : "通知なし";
+    }
+
+    function makeScheduleStartDate(schedule) {
+        const date = parseDateKey(schedule.date);
+        if (!date || !isTimeString(schedule.start)) {
+            return null;
+        }
+
+        const startMinutes = timeToMinutes(schedule.start);
+        return new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            Math.floor(startMinutes / 60),
+            startMinutes % 60,
+            0,
+            0
+        );
+    }
+
+    function makeReminderDate(schedule) {
+        const startDate = makeScheduleStartDate(schedule);
+        const reminderMinutes = normalizeReminderMinutes(schedule.reminderMinutes);
+        if (!startDate || reminderMinutes === 0) {
+            return null;
+        }
+        return new Date(startDate.getTime() - (reminderMinutes * 60 * 1000));
+    }
+
+    function isNotificationTime(now, targetDate) {
+        if (!targetDate) {
+            return false;
+        }
+        const elapsed = now.getTime() - targetDate.getTime();
+        return elapsed >= 0 && elapsed < NOTIFICATION_GRACE_MS;
+    }
+
+    /* 追加する前に過ぎていた時刻を、あとから新しい通知として出さないための確認です。 */
+    function wasNotificationTimeAfterCreation(schedule, targetDate) {
+        if (!targetDate || typeof schedule.createdAt !== "string") {
+            return true;
+        }
+
+        const createdAt = new Date(schedule.createdAt);
+        /* 入力は分単位なので、同じ1分の途中で追加した場合だけは「今の通知」として扱います。 */
+        return Number.isNaN(createdAt.getTime())
+            || (targetDate.getTime() + 60000) > createdAt.getTime();
+    }
+
+    /* 最大1日前のリマインドと5分の遅れだけを見るため、近い3日分に絞って軽く確認します。 */
+    function getNotificationCandidateSchedules(now) {
+        const today = startOfDay(now);
+        const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+        const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+        return [yesterday, today, tomorrow].flatMap((date) => schedulesForDate(date));
+    }
+
     function formatLongDate(date) {
         return LONG_DATE_FORMATTER.format(date);
     }
@@ -215,6 +307,11 @@
             && isTimeString(item.start)
             && isTimeString(item.end)
             && (typeof item.important === "undefined" || typeof item.important === "boolean")
+            && (
+                typeof item.reminderMinutes === "undefined"
+                || (typeof item.reminderMinutes === "number"
+                    && REMINDER_MINUTE_OPTIONS.includes(item.reminderMinutes))
+            )
             && (typeof item.source === "undefined" || item.source === "local" || item.source === "google")
             && timeToMinutes(item.end) > timeToMinutes(item.start);
     }
@@ -223,6 +320,7 @@
         return {
             ...item,
             important: item.important === true,
+            reminderMinutes: normalizeReminderMinutes(item.reminderMinutes),
             source: item.source === "google" ? "google" : "local",
             googleCalendarId: typeof item.googleCalendarId === "string" ? item.googleCalendarId : "",
             googleEventId: typeof item.googleEventId === "string" ? item.googleEventId : "",
@@ -285,6 +383,93 @@
         }
     }
 
+    /* ブラウザー通知を二重に出さないため、直近7日分だけ通知済み記録を残します。 */
+    function loadNotificationHistory() {
+        try {
+            const savedValue = window.localStorage.getItem(NOTIFICATION_HISTORY_KEY);
+            const parsedValue = savedValue ? JSON.parse(savedValue) : {};
+            const oldestAllowed = Date.now() - NOTIFICATION_HISTORY_MAX_AGE_MS;
+            const entries = parsedValue && typeof parsedValue === "object" && !Array.isArray(parsedValue)
+                ? Object.entries(parsedValue)
+                : [];
+            return new Map(entries.filter(([key, sentAt]) => (
+                typeof key === "string"
+                && typeof sentAt === "number"
+                && Number.isFinite(sentAt)
+                && sentAt >= oldestAllowed
+            )));
+        } catch (error) {
+            return new Map();
+        }
+    }
+
+    function saveNotificationHistory() {
+        try {
+            const oldestAllowed = Date.now() - NOTIFICATION_HISTORY_MAX_AGE_MS;
+            notificationHistory.forEach((sentAt, key) => {
+                if (sentAt < oldestAllowed) {
+                    notificationHistory.delete(key);
+                }
+            });
+            window.localStorage.setItem(
+                NOTIFICATION_HISTORY_KEY,
+                JSON.stringify(Object.fromEntries(notificationHistory))
+            );
+        } catch (error) {
+            // 通知履歴を保存できない場合も、予定と画面内のお知らせはそのまま使えます。
+        }
+    }
+
+    function syncNotificationHistory() {
+        const latestHistory = loadNotificationHistory();
+        notificationHistory.clear();
+        latestHistory.forEach((sentAt, key) => notificationHistory.set(key, sentAt));
+    }
+
+    function markBrowserNotificationSent(notificationKey) {
+        notificationHistory.set(notificationKey, Date.now());
+        saveNotificationHistory();
+    }
+
+    function removeNotificationHistoryForSchedule(scheduleId) {
+        syncNotificationHistory();
+        const keyEnding = `:${scheduleId}`;
+        let changed = false;
+        notificationHistory.forEach((sentAt, key) => {
+            if (key.endsWith(keyEnding)) {
+                notificationHistory.delete(key);
+                changed = true;
+            }
+        });
+        pendingNotificationKeys.forEach((key) => {
+            if (key.endsWith(keyEnding)) {
+                pendingNotificationKeys.delete(key);
+            }
+        });
+        failedNotificationKeys.forEach((key) => {
+            if (key.endsWith(keyEnding)) {
+                failedNotificationKeys.delete(key);
+            }
+        });
+        if (changed) {
+            saveNotificationHistory();
+        }
+    }
+
+    function removeDismissedAlertsForSchedule(scheduleId) {
+        const keyEnding = `:${scheduleId}`;
+        let changed = false;
+        dismissedAlertKeys.forEach((key) => {
+            if (key.endsWith(keyEnding)) {
+                dismissedAlertKeys.delete(key);
+                changed = true;
+            }
+        });
+        if (changed) {
+            saveDismissedAlerts();
+        }
+    }
+
     /* =======================================================
        4. 明るい表示とダークモードを切り替える
        ======================================================= */
@@ -330,7 +515,263 @@
     }
 
     /* =======================================================
-       5. 月間カレンダーを描く
+       5. ブラウザー通知の許可と、通知を一度だけ表示する処理
+       ======================================================= */
+    function canUseBrowserNotifications() {
+        return window.isSecureContext && "Notification" in window;
+    }
+
+    function updateBrowserNotificationUi() {
+        const panel = elements.notificationPermissionPanel;
+        const status = elements.notificationPermissionStatus;
+        const button = elements.notificationPermissionButton;
+
+        if (!canUseBrowserNotifications()) {
+            panel.dataset.state = "unsupported";
+            status.textContent = "localhostまたはHTTPSで開くと使えます。黄色い画面内通知はそのまま動きます。";
+            button.textContent = "通知を利用できません";
+            button.disabled = true;
+            return;
+        }
+
+        const permission = window.Notification.permission;
+        panel.dataset.state = permission;
+        if (permission === "granted") {
+            status.textContent = "許可済みです。ページを開いていれば別タブでも通知します（少し遅れる場合があります）。";
+            button.textContent = "通知は許可済み";
+            button.disabled = true;
+        } else if (permission === "denied") {
+            status.textContent = "ブロックされています。ブラウザのサイト設定から通知を許可してください。";
+            button.textContent = "通知はブロック中";
+            button.disabled = true;
+        } else {
+            status.textContent = "未設定です。許可すると、リマインド時刻と予定開始時刻を通知します。";
+            button.textContent = "通知を許可";
+            button.disabled = false;
+        }
+    }
+
+    function waitForActiveNotificationWorker(registration) {
+        if (registration.active) {
+            return Promise.resolve(registration);
+        }
+
+        const worker = registration.installing || registration.waiting;
+        if (!worker) {
+            return Promise.resolve(null);
+        }
+
+        return new Promise((resolve) => {
+            let isFinished = false;
+            let timeoutId = null;
+
+            const finish = (value) => {
+                if (isFinished) {
+                    return;
+                }
+                isFinished = true;
+                window.clearTimeout(timeoutId);
+                worker.removeEventListener("statechange", checkWorkerState);
+                resolve(value);
+            };
+
+            const checkWorkerState = () => {
+                if (registration.active || worker.state === "activated") {
+                    finish(registration);
+                } else if (worker.state === "redundant") {
+                    finish(null);
+                }
+            };
+
+            worker.addEventListener("statechange", checkWorkerState);
+            timeoutId = window.setTimeout(() => {
+                finish(registration.active ? registration : null);
+            }, SERVICE_WORKER_READY_TIMEOUT_MS);
+            checkWorkerState();
+        });
+    }
+
+    function prepareNotificationServiceWorker() {
+        if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+            return Promise.resolve(null);
+        }
+        if (!notificationServiceWorkerPromise) {
+            notificationServiceWorkerPromise = navigator.serviceWorker
+                .register("service-worker.js?v=20260821m")
+                .then(waitForActiveNotificationWorker)
+                .then((registration) => {
+                    /* 3秒を超えた場合は、次の通知で有効化済みかもう一度確認できます。 */
+                    if (!registration) {
+                        notificationServiceWorkerPromise = null;
+                    }
+                    return registration;
+                })
+                .catch((error) => {
+                    notificationServiceWorkerPromise = null;
+                    console.warn("通知を表示する準備ができませんでした。", error);
+                    return null;
+                });
+        }
+        return notificationServiceWorkerPromise;
+    }
+
+    async function requestBrowserNotificationPermission() {
+        if (!canUseBrowserNotifications() || window.Notification.permission !== "default") {
+            updateBrowserNotificationUi();
+            return;
+        }
+
+        elements.notificationPermissionButton.disabled = true;
+        elements.notificationPermissionButton.textContent = "確認中…";
+        try {
+            const permission = await window.Notification.requestPermission();
+            updateBrowserNotificationUi();
+            if (permission === "granted") {
+                await prepareNotificationServiceWorker();
+                announce("ブラウザ通知を許可しました。");
+                tick();
+            } else {
+                announce("ブラウザ通知は許可されませんでした。黄色い画面内通知は使えます。");
+            }
+        } catch (error) {
+            updateBrowserNotificationUi();
+            announce("ブラウザ通知の許可を確認できませんでした。黄色い画面内通知は使えます。");
+        }
+    }
+
+    function runWithNotificationLock(callback) {
+        if (navigator.locks && typeof navigator.locks.request === "function") {
+            return navigator.locks.request("tokeibe-browser-notification", { mode: "exclusive" }, callback);
+        }
+        return callback();
+    }
+
+    function isBrowserNotificationStillValid(kind, scheduleId, targetTimestamp) {
+        /* storageイベントより先に処理が進んでもよいよう、保存場所から最新予定を直接確認します。 */
+        const schedule = loadSchedules().find((item) => item.id === scheduleId);
+        if (!schedule) {
+            return false;
+        }
+
+        const startDate = makeScheduleStartDate(schedule);
+        const targetDate = kind === "reminder" ? makeReminderDate(schedule) : startDate;
+        if (
+            !startDate
+            || !targetDate
+            || targetDate.getTime() !== targetTimestamp
+            || !wasNotificationTimeAfterCreation(schedule, targetDate)
+            || !isNotificationTime(new Date(), targetDate)
+        ) {
+            return false;
+        }
+
+        return kind !== "reminder" || Date.now() < startDate.getTime();
+    }
+
+    async function showBrowserNotification(notificationKey, title, body, isStillValid) {
+        if (
+            !canUseBrowserNotifications()
+            || window.Notification.permission !== "granted"
+            || notificationHistory.has(notificationKey)
+            || pendingNotificationKeys.has(notificationKey)
+            || failedNotificationKeys.has(notificationKey)
+        ) {
+            return;
+        }
+
+        pendingNotificationKeys.add(notificationKey);
+        const targetUrl = new URL("./", window.location.href).href;
+        const iconUrl = new URL("img/icon.png", targetUrl).href;
+        const options = {
+            body,
+            tag: `tokeibe-${notificationKey}`,
+            icon: iconUrl,
+            badge: iconUrl,
+            data: { url: targetUrl }
+        };
+
+        try {
+            await runWithNotificationLock(async () => {
+                /* 別タブが先に通知した可能性があるため、ロックの中でもう一度読み直します。 */
+                syncNotificationHistory();
+                if (
+                    notificationHistory.has(notificationKey)
+                    || failedNotificationKeys.has(notificationKey)
+                    || window.Notification.permission !== "granted"
+                    || !isStillValid()
+                ) {
+                    return;
+                }
+
+                const registration = await prepareNotificationServiceWorker();
+                syncNotificationHistory();
+                if (
+                    notificationHistory.has(notificationKey)
+                    || window.Notification.permission !== "granted"
+                    || !isStillValid()
+                ) {
+                    return;
+                }
+
+                if (registration && typeof registration.showNotification === "function") {
+                    await registration.showNotification(title, options);
+                } else {
+                    const notification = new window.Notification(title, options);
+                    notification.addEventListener("click", () => {
+                        window.focus();
+                        notification.close();
+                    });
+                }
+                markBrowserNotificationSent(notificationKey);
+            });
+        } catch (error) {
+            failedNotificationKeys.add(notificationKey);
+            console.warn("ブラウザ通知を表示できませんでした。", error);
+        } finally {
+            pendingNotificationKeys.delete(notificationKey);
+        }
+    }
+
+    function checkBrowserNotifications(now) {
+        if (!canUseBrowserNotifications() || window.Notification.permission !== "granted") {
+            return;
+        }
+
+        getNotificationCandidateSchedules(now).forEach((schedule) => {
+            const startDate = makeScheduleStartDate(schedule);
+            const reminderDate = makeReminderDate(schedule);
+            const body = `${schedule.start}〜${schedule.end}　${schedule.title}`;
+
+            if (
+                isNotificationTime(now, reminderDate)
+                && startDate
+                && now.getTime() < startDate.getTime()
+                && wasNotificationTimeAfterCreation(schedule, reminderDate)
+            ) {
+                const reminderTime = minutesToTime((reminderDate.getHours() * 60) + reminderDate.getMinutes());
+                const reminderKey = `reminder:${reminderDate.getTime()}:${schedule.id}`;
+                void showBrowserNotification(
+                    reminderKey,
+                    `${reminderTime}のリマインド時間になりました。`,
+                    body,
+                    () => isBrowserNotificationStillValid("reminder", schedule.id, reminderDate.getTime())
+                );
+            }
+
+            if (isNotificationTime(now, startDate) && wasNotificationTimeAfterCreation(schedule, startDate)) {
+                const startKey = `start:${startDate.getTime()}:${schedule.id}`;
+                void showBrowserNotification(
+                    startKey,
+                    "予定の時刻になりました",
+                    body,
+                    () => isBrowserNotificationStillValid("start", schedule.id, startDate.getTime())
+                );
+            }
+        });
+    }
+
+    /* =======================================================
+       6. 月間カレンダーを描く
        ======================================================= */
     /* 午前・午後の色帯の端へ、その時間帯にある予定数を丸く表示します。 */
     function appendCalendarPeriodCount(button, period, count) {
@@ -504,7 +945,7 @@
     }
 
     /* =======================================================
-       5. 1～12の時刻ボタンと吹き出し
+       7. 1～12の時刻ボタンと吹き出し
        ======================================================= */
     function buildHourButtons() {
         elements.hourButtons.replaceChildren();
@@ -636,7 +1077,7 @@
     }
 
     /* =======================================================
-       6. 時計の背景に、午前は青・午後はオレンジで予定を描く
+       8. 時計の背景に、午前は青・午後はオレンジで予定を描く
        ======================================================= */
     function appendScheduleArc(period, startMinutes, endMinutes, isImportant) {
         const periodStart = period === "am" ? 0 : 720;
@@ -710,7 +1151,7 @@
     }
 
     /* =======================================================
-       7. 時計の針を、端末の現在時刻に合わせる
+       9. 時計の針を、端末の現在時刻に合わせる
        ======================================================= */
     function updateClockHands(now) {
         const hours = now.getHours() % 12;
@@ -723,7 +1164,7 @@
     }
 
     /* =======================================================
-       8. 今日の日程一覧
+       10. 今日の日程一覧
        ======================================================= */
     function renderTodayScheduleList() {
         const todaySchedules = schedulesForDate(new Date());
@@ -774,6 +1215,12 @@
                 googleBadge.textContent = "Google";
                 title.appendChild(googleBadge);
             }
+            if (normalizeReminderMinutes(schedule.reminderMinutes) > 0) {
+                const reminderBadge = document.createElement("span");
+                reminderBadge.className = "schedule-badge reminder";
+                reminderBadge.textContent = formatReminderLabel(schedule.reminderMinutes);
+                title.appendChild(reminderBadge);
+            }
 
             deleteButton.type = "button";
             deleteButton.className = "delete-schedule-button";
@@ -805,13 +1252,15 @@
             return;
         }
 
+        removeNotificationHistoryForSchedule(schedule.id);
+        removeDismissedAlertsForSchedule(schedule.id);
         renderAllScheduleViews();
-        checkScheduleAlert(new Date());
+        checkAlertsAndNotifications(new Date());
         announce(`${schedule.title}を削除しました。`);
     }
 
     /* =======================================================
-       9. 予定を入力する画面を開く・閉じる
+       11. 予定を入力する画面を開く・閉じる
        ======================================================= */
     function getDefaultScheduleRange() {
         const now = new Date();
@@ -866,6 +1315,7 @@
         elements.scheduleTitle.value = "";
         elements.scheduleStart.value = minutesToTime(startMinutes);
         elements.scheduleEnd.value = minutesToTime(endMinutes);
+        elements.scheduleReminder.value = "0";
         elements.scheduleImportant.checked = false;
         elements.addToGoogleCalendar.checked = false;
         elements.formError.hidden = true;
@@ -911,6 +1361,7 @@
         const title = elements.scheduleTitle.value.trim();
         const start = elements.scheduleStart.value;
         const end = elements.scheduleEnd.value;
+        const reminderMinutes = normalizeReminderMinutes(elements.scheduleReminder.value);
         const important = elements.scheduleImportant.checked;
         const requestedGoogleAdd = !elements.googleAddChoice.hidden && elements.addToGoogleCalendar.checked;
         const shouldAddToGoogle = requestedGoogleAdd && hasValidGoogleToken();
@@ -931,6 +1382,10 @@
             showFormError("終わる時刻は、始まる時刻より後にしてください。", elements.scheduleEnd);
             return;
         }
+        if (!REMINDER_MINUTE_OPTIONS.includes(Number(elements.scheduleReminder.value))) {
+            showFormError("正しいリマインド時間を選んでください。", elements.scheduleReminder);
+            return;
+        }
 
         const newSchedule = {
             id: makeScheduleId(),
@@ -938,6 +1393,7 @@
             title,
             start,
             end,
+            reminderMinutes,
             important,
             source: "local",
             googleCalendarId: "",
@@ -961,8 +1417,11 @@
         viewingMonth = new Date(date.getFullYear(), date.getMonth(), 1);
         renderAllScheduleViews();
         closeScheduleModal();
-        checkScheduleAlert(new Date());
-        announce(`${title}を${start}から${end}に追加しました。`);
+        checkAlertsAndNotifications(new Date());
+        const reminderAnnouncement = reminderMinutes > 0
+            ? ` ${formatReminderLabel(reminderMinutes)}を設定しました。`
+            : "";
+        announce(`${title}を${start}から${end}に追加しました。${reminderAnnouncement}`);
 
         if (requestedGoogleAdd && !shouldAddToGoogle) {
             clearGoogleConnectionState("Googleの接続期限が切れたため、ローカルだけに保存しました。もう一度接続してください。", true);
@@ -998,7 +1457,7 @@
         }
 
         const focusableElements = [...elements.scheduleModal.querySelectorAll(
-            "button:not([disabled]), input:not([disabled])"
+            "button:not([disabled]), input:not([disabled]), select:not([disabled])"
         )].filter((element) => element.offsetParent !== null);
 
         if (focusableElements.length === 0) {
@@ -1018,7 +1477,7 @@
     }
 
     /* =======================================================
-       10. GoogleカレンダーをOAuth 2.0で安全に読み書きする
+       12. GoogleカレンダーをOAuth 2.0で安全に読み書きする
        ======================================================= */
     function isGoogleClientIdConfigured() {
         return typeof GOOGLE_CLIENT_ID === "string"
@@ -1355,6 +1814,7 @@
                 title: (rawTitle || "Googleカレンダーの予定").slice(0, 60),
                 start: start.time,
                 end: end.time,
+                reminderMinutes: 0,
                 important: privateProperties.tokeibeImportance === "important"
                     || privateProperties.importance === "important",
                 source: "google",
@@ -1426,6 +1886,7 @@
                     const updated = {
                         ...existing,
                         ...imported,
+                        reminderMinutes: normalizeReminderMinutes(existing.reminderMinutes),
                         important: existing.important || imported.important
                     };
                     const hasChanged = ["date", "title", "start", "end", "important", "googleHtmlLink", "googleUpdated", "googleEtag"]
@@ -1472,7 +1933,7 @@
                 throw makeGoogleError("Imported schedules could not be saved", 0, "storage_failed");
             }
             renderAllScheduleViews();
-            checkScheduleAlert(new Date());
+            checkAlertsAndNotifications(new Date());
         }
 
         return { addedCount, updatedCount, duplicateCount, allDayCount, multiDayCount, skippedCount };
@@ -1568,10 +2029,89 @@
     }
 
     /* =======================================================
-       11. 現在の予定を、時計の前に半透明で知らせる
+       13. リマインドと現在の予定を、時計の前で知らせる
        ======================================================= */
-    function makeDismissedScheduleKey(dateKey, scheduleId) {
-        return `${dateKey}:${scheduleId}`;
+    function makeReminderDismissalKey(schedule, reminderDate) {
+        return `reminder:${reminderDate.getTime()}:${schedule.id}`;
+    }
+
+    function getDueReminderEntries(now) {
+        return getNotificationCandidateSchedules(now).map((schedule) => {
+            const startDate = makeScheduleStartDate(schedule);
+            const reminderDate = makeReminderDate(schedule);
+            return {
+                schedule,
+                startDate,
+                reminderDate,
+                dismissalKey: reminderDate ? makeReminderDismissalKey(schedule, reminderDate) : ""
+            };
+        }).filter((entry) => (
+            entry.reminderDate
+            && isNotificationTime(now, entry.reminderDate)
+            && entry.startDate
+            && now.getTime() < entry.startDate.getTime()
+            && wasNotificationTimeAfterCreation(entry.schedule, entry.reminderDate)
+            && !dismissedAlertKeys.has(entry.dismissalKey)
+        )).sort((a, b) => (
+            a.reminderDate - b.reminderDate
+            || a.schedule.start.localeCompare(b.schedule.start)
+        ));
+    }
+
+    function showReminderAlert(alertKey, reminderEntries) {
+        window.clearTimeout(reminderAlertHideTimer);
+        currentReminderAlertKey = alertKey;
+        currentReminderDismissalKeys = reminderEntries.map((entry) => entry.dismissalKey);
+
+        const reminderTimes = [...new Set(reminderEntries.map((entry) => (
+            minutesToTime((entry.reminderDate.getHours() * 60) + entry.reminderDate.getMinutes())
+        )))];
+        elements.reminderAlertTitle.textContent = `${reminderTimes.join("・")}のリマインド時間になりました。`;
+        elements.reminderAlertDetail.textContent = reminderEntries
+            .map(({ schedule }) => `${schedule.start}〜${schedule.end}　${schedule.title}`)
+            .join("\n");
+        elements.reminderAlert.hidden = false;
+        window.requestAnimationFrame(() => elements.reminderAlert.classList.add("is-visible"));
+    }
+
+    function hideReminderAlert() {
+        elements.reminderAlert.classList.remove("is-visible");
+        currentReminderAlertKey = "";
+        currentReminderDismissalKeys = [];
+        window.clearTimeout(reminderAlertHideTimer);
+        reminderAlertHideTimer = window.setTimeout(() => {
+            if (!elements.reminderAlert.classList.contains("is-visible")) {
+                elements.reminderAlert.hidden = true;
+            }
+        }, FADE_DURATION);
+    }
+
+    function dismissReminderAlert() {
+        currentReminderDismissalKeys.forEach((key) => dismissedAlertKeys.add(key));
+        saveDismissedAlerts();
+        hideReminderAlert();
+        announce("リマインドのお知らせを閉じました。");
+    }
+
+    function checkReminderAlert(now) {
+        const reminderEntries = getDueReminderEntries(now);
+        if (reminderEntries.length === 0) {
+            if (!elements.reminderAlert.hidden) {
+                hideReminderAlert();
+            }
+            return;
+        }
+
+        const alertKey = reminderEntries.map((entry) => entry.dismissalKey).sort().join("|");
+        if (currentReminderAlertKey !== alertKey || elements.reminderAlert.hidden) {
+            showReminderAlert(alertKey, reminderEntries);
+        }
+    }
+
+    function makeDismissedScheduleKey(schedule) {
+        const startDate = makeScheduleStartDate(schedule);
+        const startKey = startDate ? startDate.getTime() : `${schedule.date}:${schedule.start}`;
+        return `start:${startKey}:${schedule.id}`;
     }
 
     function showScheduleAlert(alertKey, dateKey, activeSchedules) {
@@ -1602,7 +2142,7 @@
     function dismissScheduleAlert() {
         if (currentAlertDateKey && currentAlertSchedules.length > 0) {
             currentAlertSchedules.forEach((schedule) => {
-                dismissedAlertKeys.add(makeDismissedScheduleKey(currentAlertDateKey, schedule.id));
+                dismissedAlertKeys.add(makeDismissedScheduleKey(schedule));
             });
             saveDismissedAlerts();
         }
@@ -1616,7 +2156,7 @@
         const activeSchedules = schedulesForDate(now).filter((schedule) => (
             currentMinutes >= timeToMinutes(schedule.start)
             && currentMinutes < timeToMinutes(schedule.end)
-            && !dismissedAlertKeys.has(makeDismissedScheduleKey(currentDateKey, schedule.id))
+            && !dismissedAlertKeys.has(makeDismissedScheduleKey(schedule))
         ));
 
         if (activeSchedules.length === 0) {
@@ -1626,15 +2166,21 @@
             return;
         }
 
-        const alertKey = `${currentDateKey}:${activeSchedules.map((schedule) => schedule.id).sort().join("|")}`;
+        const alertKey = activeSchedules.map(makeDismissedScheduleKey).sort().join("|");
 
         if (currentAlertKey !== alertKey || elements.scheduleAlert.hidden) {
             showScheduleAlert(alertKey, currentDateKey, activeSchedules);
         }
     }
 
+    function checkAlertsAndNotifications(now) {
+        checkReminderAlert(now);
+        checkScheduleAlert(now);
+        checkBrowserNotifications(now);
+    }
+
     /* =======================================================
-       11. 画面をまとめて更新する処理
+       14. 画面をまとめて更新する処理
        ======================================================= */
     function renderAllScheduleViews() {
         renderCalendar();
@@ -1652,8 +2198,10 @@
     function tick() {
         const now = new Date();
         const todayKey = toDateKey(now);
-        updateClockHands(now);
-        checkScheduleAlert(now);
+        if (!document.hidden) {
+            updateClockHands(now);
+        }
+        checkAlertsAndNotifications(now);
 
         // 日付をまたいだ場合は、今日の印と一覧を自動で更新します。
         if (todayKey !== lastKnownTodayKey) {
@@ -1672,11 +2220,7 @@
 
     function scheduleNextTick() {
         window.clearTimeout(tickTimer);
-        if (document.hidden) {
-            return;
-        }
-
-        // 秒針はないため、次の「分が変わる瞬間」だけ確認すれば十分です。
+        // ページが後ろにある間も、軽い確認を1分に1回だけ続けます。
         const millisecondsUntilNextMinute = 60000 - (Date.now() % 60000) + 40;
         tickTimer = window.setTimeout(() => {
             tick();
@@ -1685,7 +2229,7 @@
     }
 
     /* =======================================================
-       12. ボタンを押したときの動きを結びつける
+       15. ボタンを押したときの動きを結びつける
        ======================================================= */
     function registerEvents() {
         elements.themeToggle.addEventListener("click", toggleTheme);
@@ -1704,7 +2248,9 @@
         elements.popoverAddButton.addEventListener("click", () => {
             openScheduleModal({ hour: selectedHour, period: selectedPeriod });
         });
+        elements.reminderAlertClose.addEventListener("click", dismissReminderAlert);
         elements.scheduleAlertClose.addEventListener("click", dismissScheduleAlert);
+        elements.notificationPermissionButton.addEventListener("click", requestBrowserNotificationPermission);
         elements.modalCloseButton.addEventListener("click", () => closeScheduleModal());
         elements.formCancelButton.addEventListener("click", () => closeScheduleModal());
         elements.scheduleForm.addEventListener("submit", submitSchedule);
@@ -1746,6 +2292,8 @@
                 closeScheduleModal();
             } else if (elements.hourPopover.classList.contains("is-visible")) {
                 closeHourPopover(true);
+            } else if (!elements.reminderAlert.hidden) {
+                dismissReminderAlert();
             } else if (!elements.scheduleAlert.hidden) {
                 dismissScheduleAlert();
             } else if (
@@ -1757,10 +2305,20 @@
         });
 
         window.addEventListener("resize", positionHourPopover);
+        window.addEventListener("storage", (event) => {
+            if (event.key === NOTIFICATION_HISTORY_KEY) {
+                syncNotificationHistory();
+            } else if (event.key === STORAGE_KEY) {
+                /* 別タブで増減した予定も、表示と通知の両方へすぐ反映します。 */
+                schedules = loadSchedules();
+                rebuildScheduleIndex();
+                renderAllScheduleViews();
+                checkAlertsAndNotifications(new Date());
+            }
+        });
         document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
-                window.clearTimeout(tickTimer);
-            } else {
+            if (!document.hidden) {
+                updateBrowserNotificationUi();
                 tick();
                 scheduleNextTick();
             }
@@ -1768,10 +2326,14 @@
     }
 
     /* =======================================================
-       13. アプリを開始する
+       16. アプリを開始する
        ======================================================= */
     function init() {
         applyTheme(getInitialTheme());
+        updateBrowserNotificationUi();
+        if (canUseBrowserNotifications() && window.Notification.permission === "granted") {
+            void prepareNotificationServiceWorker();
+        }
         updateGoogleConnectionUi();
         if (!canUseGoogleOAuthOnCurrentOrigin()) {
             setGoogleStatus("Google連携を使うときは、localhostまたはHTTPSでこのページを開いてください。");
