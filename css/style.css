@@ -437,11 +437,11 @@ h2 {
 }
 
 .calendar-day::before {
-    top: 5px;
+    top: 9px;
 }
 
 .calendar-day::after {
-    bottom: 5px;
+    bottom: 9px;
 }
 
 .calendar-day.has-am-schedule::before {
@@ -458,6 +458,157 @@ h2 {
 .calendar-day.has-important-am-schedule::before,
 .calendar-day.has-important-pm-schedule::after {
     background: var(--color-important);
+}
+
+/* 色帯の右端に、午前・午後それぞれの予定数を丸数字で重ねます。 */
+.calendar-period-count {
+    --period-count-color: var(--color-am);
+    position: absolute;
+    z-index: 2;
+    right: 1px;
+    display: inline-grid;
+    place-items: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border: 2px solid var(--period-count-color);
+    border-radius: 999px;
+    color: var(--color-text);
+    background: var(--color-surface);
+    font-size: 0.57rem;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(23, 32, 51, 0.2);
+    pointer-events: none;
+}
+
+.calendar-period-count.am {
+    top: 3px;
+}
+
+.calendar-period-count.pm {
+    --period-count-color: var(--color-pm);
+    bottom: 3px;
+}
+
+.calendar-day.has-important-am-schedule .calendar-period-count.am,
+.calendar-day.has-important-pm-schedule .calendar-period-count.pm {
+    --period-count-color: var(--color-important);
+    color: var(--color-important);
+}
+
+/* 日付へカーソルを合わせるかフォーカスすると、全予定のタイトルを表示します。 */
+.calendar-day:hover,
+.calendar-day:focus {
+    z-index: 40;
+}
+
+.calendar-schedule-tooltip {
+    --calendar-tooltip-x: -50%;
+    position: absolute;
+    z-index: 60;
+    bottom: calc(100% + 9px);
+    left: 50%;
+    display: block;
+    width: min(250px, calc(100vw - 24px));
+    max-height: min(260px, calc(100vh - 40px));
+    padding: 11px 12px;
+    overflow-y: auto;
+    border: 1px solid var(--color-line);
+    border-radius: 13px;
+    color: var(--color-text);
+    background: var(--color-surface);
+    box-shadow: 0 14px 34px rgba(23, 32, 51, 0.2);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(var(--calendar-tooltip-x), 4px);
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.calendar-day.calendar-tooltip-align-start .calendar-schedule-tooltip {
+    --calendar-tooltip-x: 0;
+    left: 0;
+}
+
+.calendar-day.calendar-tooltip-align-end .calendar-schedule-tooltip {
+    --calendar-tooltip-x: 0;
+    right: 0;
+    left: auto;
+}
+
+.calendar-day:focus .calendar-schedule-tooltip {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(var(--calendar-tooltip-x), 0);
+}
+
+/* 本当にカーソルを使える端末だけ、hoverでもタイトルを開きます。 */
+@media (hover: hover) {
+    .calendar-day:hover .calendar-schedule-tooltip {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(var(--calendar-tooltip-x), 0);
+    }
+}
+
+.calendar-tooltip-heading,
+.calendar-tooltip-list,
+.calendar-tooltip-item {
+    display: block;
+}
+
+.calendar-tooltip-heading {
+    margin-bottom: 7px;
+    color: var(--color-muted);
+    font-size: 0.68rem;
+    font-weight: 850;
+}
+
+.calendar-tooltip-list {
+    display: grid;
+    gap: 6px;
+}
+
+.calendar-tooltip-item {
+    display: grid;
+    grid-template-columns: 70px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 7px;
+}
+
+.calendar-tooltip-time {
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.calendar-tooltip-title {
+    min-width: 0;
+    color: var(--color-text);
+    font-weight: 750;
+}
+
+.calendar-tooltip-important {
+    align-self: start;
+    padding: 1px 5px;
+    border-radius: 999px;
+    color: #ffffff;
+    background: var(--color-important);
+    font-size: 0.58rem;
+    font-weight: 900;
+}
+
+.calendar-tooltip-item.is-important .calendar-tooltip-title {
+    color: var(--color-important);
 }
 
 /* 重要な予定がある日は、日付の数字も赤くして見落としにくくします。 */
@@ -1532,11 +1683,33 @@ body[data-theme="dark"] .connection-badge.is-connected {
     }
 
     .calendar-day::before {
-        top: 3px;
+        top: 8px;
     }
 
     .calendar-day::after {
+        bottom: 8px;
+    }
+
+    .calendar-period-count {
+        right: 0;
+        min-width: 14px;
+        height: 14px;
+        padding: 0 2px;
+        border-width: 1px;
+        font-size: 0.5rem;
+    }
+
+    .calendar-period-count.am {
+        top: 3px;
+    }
+
+    .calendar-period-count.pm {
         bottom: 3px;
+    }
+
+    .calendar-schedule-tooltip {
+        width: min(240px, calc(100vw - 20px));
+        padding: 10px;
     }
 
     .clock-wrap {

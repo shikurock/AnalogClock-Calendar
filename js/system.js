@@ -332,6 +332,56 @@
     /* =======================================================
        5. 月間カレンダーを描く
        ======================================================= */
+    /* 午前・午後の色帯の端へ、その時間帯にある予定数を丸く表示します。 */
+    function appendCalendarPeriodCount(button, period, count) {
+        const countBadge = document.createElement("span");
+        countBadge.className = `calendar-period-count ${period}`;
+        countBadge.textContent = String(count);
+        countBadge.setAttribute("aria-hidden", "true");
+        button.appendChild(countBadge);
+    }
+
+    /* カーソルやキーボードで日付を選んだときに、全予定のタイトルを見せます。 */
+    function appendCalendarScheduleTooltip(button, dateKey, dateSchedules) {
+        const tooltip = document.createElement("span");
+        const heading = document.createElement("span");
+        const list = document.createElement("span");
+
+        tooltip.id = `calendar-schedule-tooltip-${dateKey}`;
+        tooltip.className = "calendar-schedule-tooltip";
+        tooltip.setAttribute("role", "tooltip");
+        heading.className = "calendar-tooltip-heading";
+        heading.textContent = `この日の予定 ${dateSchedules.length}件`;
+        list.className = "calendar-tooltip-list";
+
+        dateSchedules.forEach((schedule) => {
+            const item = document.createElement("span");
+            const time = document.createElement("span");
+            const title = document.createElement("span");
+
+            item.className = "calendar-tooltip-item";
+            time.className = "calendar-tooltip-time";
+            time.textContent = `${schedule.start}〜${schedule.end}`;
+            title.className = "calendar-tooltip-title";
+            title.textContent = schedule.title;
+            item.append(time, title);
+
+            if (schedule.important) {
+                const importantLabel = document.createElement("span");
+                item.classList.add("is-important");
+                importantLabel.className = "calendar-tooltip-important";
+                importantLabel.textContent = "重要";
+                item.appendChild(importantLabel);
+            }
+
+            list.appendChild(item);
+        });
+
+        tooltip.append(heading, list);
+        button.setAttribute("aria-describedby", tooltip.id);
+        button.appendChild(tooltip);
+    }
+
     function renderCalendar() {
         const year = viewingMonth.getFullYear();
         const month = viewingMonth.getMonth();
@@ -393,6 +443,7 @@
                 if (amSchedules.some((schedule) => schedule.important)) {
                     button.classList.add("has-important-am-schedule");
                 }
+                appendCalendarPeriodCount(button, "am", amSchedules.length);
             }
             if (pmSchedules.length > 0) {
                 button.classList.add("has-pm-schedule");
@@ -400,10 +451,19 @@
                 if (pmSchedules.some((schedule) => schedule.important)) {
                     button.classList.add("has-important-pm-schedule");
                 }
+                appendCalendarPeriodCount(button, "pm", pmSchedules.length);
             }
             if (importantScheduleCount > 0) {
                 button.classList.add("has-important-schedule");
                 descriptionParts.push(`重要な予定${importantScheduleCount}件`);
+            }
+            if (dateSchedules.length > 0) {
+                if (date.getDay() <= 1) {
+                    button.classList.add("calendar-tooltip-align-start");
+                } else if (date.getDay() >= 5) {
+                    button.classList.add("calendar-tooltip-align-end");
+                }
+                appendCalendarScheduleTooltip(button, dateKey, dateSchedules);
             }
 
             button.setAttribute("aria-label", descriptionParts.join("、"));
@@ -411,6 +471,10 @@
                 selectedDate = date;
                 closeHourPopover();
                 renderAllScheduleViews();
+                const refreshedButton = elements.calendarGrid.querySelector(`[data-date="${dateKey}"]`);
+                if (refreshedButton) {
+                    refreshedButton.focus({ preventScroll: true });
+                }
                 announce(`${formatLongDate(date)}を選びました。`);
             });
             elements.calendarGrid.appendChild(button);
@@ -1661,6 +1725,15 @@
             ) {
                 closeHourPopover();
             }
+
+            /* スマホで開いた予定タイトルは、カレンダーの外を押すと閉じます。 */
+            if (
+                !event.target.closest(".calendar-day")
+                && document.activeElement
+                && document.activeElement.classList.contains("calendar-day")
+            ) {
+                document.activeElement.blur();
+            }
         });
 
         document.addEventListener("keydown", (event) => {
@@ -1675,6 +1748,11 @@
                 closeHourPopover(true);
             } else if (!elements.scheduleAlert.hidden) {
                 dismissScheduleAlert();
+            } else if (
+                document.activeElement
+                && document.activeElement.classList.contains("calendar-day")
+            ) {
+                document.activeElement.blur();
             }
         });
 
