@@ -65,11 +65,11 @@
 
             <!-- ===== 時計：時刻の選択・予定の色分け・中央の追加ボタン ===== -->
             <section class="clock-section" aria-labelledby="clock-heading">
-            <div class="clock-heading-group">
-                <p class="eyebrow">SCHEDULE CLOCK</p>
-                <h2 id="clock-heading">予定時計</h2>
-                <p id="selectedDateLabel" class="selected-date-label"></p>
-            </div>
+                <div class="clock-heading-group">
+                    <p class="eyebrow">SCHEDULE CLOCK</p>
+                    <h2 id="clock-heading">予定時計</h2>
+                    <p id="selectedDateLabel" class="selected-date-label"></p>
+                </div>
 
                 <div class="schedule-legend" aria-label="予定の色分け">
                     <span><i class="legend-dot am"></i>午前</span>
@@ -77,64 +77,64 @@
                     <span><i class="legend-dot important"></i>重要</span>
                 </div>
 
-            <div class="clock-wrap">
-                <div id="clockFace" class="clock-face" aria-label="1時から12時までを選べる時計">
-                    <!-- 予定は、午前を外側の青い線、午後を内側のオレンジの線で描画します。 -->
-                    <svg class="schedule-rings" viewBox="0 0 100 100" aria-hidden="true">
-                        <circle class="ring-guide ring-guide-am" cx="50" cy="50" r="43"></circle>
-                        <circle class="ring-guide ring-guide-pm" cx="50" cy="50" r="36"></circle>
-                        <g id="scheduleArcs"></g>
-                    </svg>
+                <div class="clock-wrap">
+                    <div id="clockFace" class="clock-face" aria-label="1時から12時までを選べる時計">
+                        <!-- 予定は、午前を外側の青い線、午後を内側のオレンジの線で描画します。 -->
+                        <svg class="schedule-rings" viewBox="0 0 100 100" aria-hidden="true">
+                            <circle class="ring-guide ring-guide-am" cx="50" cy="50" r="43"></circle>
+                            <circle class="ring-guide ring-guide-pm" cx="50" cy="50" r="36"></circle>
+                            <g id="scheduleArcs"></g>
+                        </svg>
 
-                    <!-- 1～12のボタンはJavaScriptでこの中に並べます。 -->
-                    <div id="hourButtons" class="hour-buttons"></div>
+                        <!-- 1～12のボタンはJavaScriptでこの中に並べます。 -->
+                        <div id="hourButtons" class="hour-buttons"></div>
 
-                    <!-- 現在時刻を示す時計の針です。 -->
-                    <div id="hourHand" class="clock-hand hour-hand" aria-hidden="true"></div>
-                    <div id="minuteHand" class="clock-hand minute-hand" aria-hidden="true"></div>
-                    <div class="clock-pin" aria-hidden="true"></div>
+                        <!-- 現在時刻を示す時計の針です。 -->
+                        <div id="hourHand" class="clock-hand hour-hand" aria-hidden="true"></div>
+                        <div id="minuteHand" class="clock-hand minute-hand" aria-hidden="true"></div>
+                        <div class="clock-pin" aria-hidden="true"></div>
 
-                    <!-- 時計の中央からも予定を追加できます。 -->
-                    <button id="centralAddButton" class="central-add-button" type="button" aria-label="予定を追加">
-                        <span aria-hidden="true">＋</span>
-                    </button>
+                        <!-- 時計の中央からも予定を追加できます。 -->
+                        <button id="centralAddButton" class="central-add-button" type="button" aria-label="予定を追加">
+                            <span aria-hidden="true">＋</span>
+                        </button>
 
-                    <!-- 時刻を押したときに出る、小さな吹き出しです。 -->
-                    <div id="hourPopover" class="hour-popover" role="dialog" aria-modal="false"
-                        aria-labelledby="hourPopoverTitle" aria-hidden="true" hidden>
-                        <p id="hourPopoverTitle" class="hour-popover-title"></p>
-                        <div class="period-switch" aria-label="午前または午後を選択">
-                            <button id="amButton" class="period-button am" type="button" aria-pressed="true">午前</button>
-                            <button id="pmButton" class="period-button pm" type="button"
-                                aria-pressed="false">午後</button>
+                        <!-- 時刻を押したときに出る、小さな吹き出しです。 -->
+                        <div id="hourPopover" class="hour-popover" role="dialog" aria-modal="false"
+                            aria-labelledby="hourPopoverTitle" aria-hidden="true" hidden>
+                            <p id="hourPopoverTitle" class="hour-popover-title"></p>
+                            <div class="period-switch" aria-label="午前または午後を選択">
+                                <button id="amButton" class="period-button am" type="button"
+                                    aria-pressed="true">午前</button>
+                                <button id="pmButton" class="period-button pm" type="button"
+                                    aria-pressed="false">午後</button>
+                            </div>
+                            <button id="popoverAddButton" class="popover-add-button" type="button">日程を追加</button>
                         </div>
-                        <button id="popoverAddButton" class="popover-add-button" type="button">日程を追加</button>
-                    </div>
 
-                    <!-- 登録した予定の時刻になったとき、時計の前に表示するお知らせです。 -->
-                    <div id="scheduleAlert" class="schedule-alert" role="alert"
-                        aria-labelledby="scheduleAlertTitle" aria-describedby="scheduleAlertDetail" hidden>
-                        <div class="schedule-alert-message">
-                            <strong id="scheduleAlertTitle">予定の時刻になりました</strong>
-                            <p id="scheduleAlertDetail"></p>
+                        <!-- 登録した予定の時刻になったとき、時計の前に表示するお知らせです。 -->
+                        <div id="scheduleAlert" class="schedule-alert" role="alert" aria-labelledby="scheduleAlertTitle"
+                            aria-describedby="scheduleAlertDetail" hidden>
+                            <div class="schedule-alert-message">
+                                <strong id="scheduleAlertTitle">予定の時刻になりました</strong>
+                                <p id="scheduleAlertDetail"></p>
+                            </div>
+                            <button id="scheduleAlertClose" class="schedule-alert-close" type="button"
+                                aria-label="予定のお知らせを閉じる">×</button>
                         </div>
-                        <button id="scheduleAlertClose" class="schedule-alert-close" type="button"
-                            aria-label="予定のお知らせを閉じる">×</button>
-                    </div>
 
-                    <!-- 登録したリマインド時刻になったときは、黄色いお知らせを前面に表示します。 -->
-                    <div id="reminderAlert" class="schedule-alert reminder-alert" role="alert"
-                        aria-labelledby="reminderAlertTitle"
-                        aria-describedby="reminderAlertDetail" hidden>
-                        <div class="schedule-alert-message">
-                            <strong id="reminderAlertTitle">リマインドの時間になりました</strong>
-                            <p id="reminderAlertDetail"></p>
+                        <!-- 登録したリマインド時刻になったときは、黄色いお知らせを前面に表示します。 -->
+                        <div id="reminderAlert" class="schedule-alert reminder-alert" role="alert"
+                            aria-labelledby="reminderAlertTitle" aria-describedby="reminderAlertDetail" hidden>
+                            <div class="schedule-alert-message">
+                                <strong id="reminderAlertTitle">リマインドの時間になりました</strong>
+                                <p id="reminderAlertDetail"></p>
+                            </div>
+                            <button id="reminderAlertClose" class="schedule-alert-close" type="button"
+                                aria-label="リマインドのお知らせを閉じる">×</button>
                         </div>
-                        <button id="reminderAlertClose" class="schedule-alert-close" type="button"
-                            aria-label="リマインドのお知らせを閉じる">×</button>
                     </div>
                 </div>
-            </div>
 
                 <p class="clock-help">数字を押すと、その時刻から予定を追加できます。</p>
 
