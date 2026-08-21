@@ -5,13 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="カレンダーと時計で、今日の予定を見やすく管理するアプリです。">
-<<<<<<< HEAD
-    <link rel="icon" href="img/icon.png?v=20260821h">
-    <link rel="stylesheet" href="css/style.css?v=20260821h">
-=======
-    <link rel="icon" href="img/icon.png?v=20260821f">
-    <link rel="stylesheet" href="css/style.css?v=20260821f">
->>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
+    <link rel="icon" href="img/icon.png?v=20260821i">
+    <link rel="stylesheet" href="css/style.css?v=20260821i">
     <title>今日の日程を視覚的にわかりやすくする。「とけイベ」</title>
 </head>
 
@@ -32,11 +27,7 @@
             <section class="calendar-card" aria-labelledby="calendar-heading">
                 <!-- ===== カレンダー上部：アプリ名と説明をカレンダー内に表示 ===== -->
                 <header class="site-header">
-<<<<<<< HEAD
-                    <img src="img/header.png?v=20260821h" alt="とけイベのロゴ">
-=======
-                    <img src="img/header.png?v=20260821f" alt="とけイベのロゴ">
->>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
+                    <img src="img/header.png?v=20260821i" alt="とけイベのロゴ">
                 </header>
 
                 <div class="section-heading-row">
@@ -153,29 +144,17 @@
             <div class="section-heading-row google-heading-row">
                 <div>
                     <p class="eyebrow">GOOGLE CALENDAR</p>
-<<<<<<< HEAD
                     <h2 id="google-calendar-heading">Googleカレンダー</h2>
-=======
-                    <h2 id="google-calendar-heading">Googleカレンダー連携</h2>
->>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
                 </div>
                 <span id="googleConnectionBadge" class="connection-badge">未接続</span>
             </div>
 
             <p class="google-calendar-description">
-<<<<<<< HEAD
                 Googleの正式な許可画面から安全に接続し、選んでいる月の予定を取り込めます。アクセストークンは保存せず、このタブを開いている間だけ使います。
             </p>
 
             <div class="google-action-row">
                 <button id="googleConnectButton" class="google-connect-button" type="button">Googleカレンダーと連携</button>
-=======
-                選んでいる月の予定を取り込めます。アクセストークンは保存せず、接続中だけ使います。取り込んだタイトルと時刻は、このブラウザー内に保存されます。
-            </p>
-
-            <div class="google-action-row">
-                <button id="googleConnectButton" class="google-connect-button" type="button">Googleに接続</button>
->>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
                 <button id="googleImportButton" class="secondary-button compact-button" type="button" disabled>
                     表示中の月を取り込む
                 </button>
@@ -183,34 +162,7 @@
                     このタブの接続を切る
                 </button>
             </div>
-<<<<<<< HEAD
             <p id="googleCalendarStatus" class="google-calendar-status" role="status">連携の準備状況を確認しています。</p>
-=======
-            <p id="googleCalendarStatus" class="google-calendar-status" role="status">初回だけ設定が必要です。</p>
-
-            <!-- クライアントIDは秘密のパスワードではありません。アクセストークンはここへ保存しません。 -->
-            <details class="google-setup-details">
-                <summary>初回設定（OAuth 2.0 クライアントID）</summary>
-                <div class="google-setup-body">
-                    <label class="form-field google-client-field">
-                        <span>ウェブ アプリ用クライアントID</span>
-                        <input id="googleClientId" type="text" inputmode="url" autocomplete="off"
-                            placeholder="例：123456789-abc.apps.googleusercontent.com">
-                    </label>
-                    <button id="saveGoogleClientIdButton" class="secondary-button compact-button" type="button">
-                        クライアントIDを保存
-                    </button>
-                    <p class="google-client-warning">クライアントシークレットは入力・保存しないでください。</p>
-                    <ol class="google-setup-steps">
-                        <li>Google Cloudで「Google Calendar API」を有効にします。</li>
-                        <li>OAuth同意画面を作り、「ウェブ アプリ」のクライアントIDを発行します。</li>
-                        <li>承認済みJavaScript生成元に、このサイトのURLを登録します。</li>
-                    </ol>
-                    <a class="google-help-link" href="https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid"
-                        target="_blank" rel="noopener noreferrer">Google公式の設定手順を開く</a>
-                </div>
-            </details>
->>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
         </section>
     </main>
 
@@ -280,11 +232,7 @@
     <!-- 操作結果を、画面読み上げソフトにも伝える場所です。 -->
     <p id="liveStatus" class="visually-hidden" aria-live="polite"></p>
 
-<<<<<<< HEAD
-    <script src="js/system.js?v=20260821h"></script>
-=======
-    <script src="js/system.js?v=20260821f"></script>
->>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
+    <script src="js/system.js?v=20260821i"></script>
 </body>
 
 </html>

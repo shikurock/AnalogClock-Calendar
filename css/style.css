@@ -1250,50 +1250,6 @@ h2 {
     opacity: 0.52;
 }
 
-<<<<<<< HEAD
-=======
-.google-setup-details {
-    margin-top: 17px;
-    border-top: 1px solid var(--color-line);
-}
-
-.google-setup-details summary {
-    padding: 14px 2px 4px;
-    color: var(--color-primary-dark);
-    font-size: 0.79rem;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.google-setup-body {
-    padding: 2px 2px 4px;
-}
-
-.google-client-field {
-    max-width: 650px;
-}
-
-.google-client-warning {
-    margin: 8px 0 0;
-    color: var(--color-important);
-    font-size: 0.74rem;
-    font-weight: 800;
-}
-
-.google-setup-steps {
-    margin: 16px 0 8px;
-    padding-left: 1.35rem;
-    color: var(--color-muted);
-    font-size: 0.76rem;
-}
-
-.google-help-link {
-    color: var(--color-primary-dark);
-    font-size: 0.78rem;
-    font-weight: 750;
-}
-
->>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
 /* ダークモードで、白く固定されていた細かな部品も暗い色へ合わせます。 */
 body[data-theme="dark"] .calendar-day:hover {
     border-color: #60728e;
