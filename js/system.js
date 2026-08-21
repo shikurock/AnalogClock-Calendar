@@ -7,12 +7,17 @@
     const STORAGE_KEY = "tokeibe.schedules.v1";
     const DISMISSED_ALERTS_KEY = "tokeibe.dismissed-alerts.v1";
     const THEME_STORAGE_KEY = "tokeibe.theme.v1";
+<<<<<<< HEAD
+=======
+    const GOOGLE_CLIENT_ID_KEY = "tokeibe.google.client-id.v1";
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
     const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
     const FADE_DURATION = 180;
     const GOOGLE_IDENTITY_SCRIPT = "https://accounts.google.com/gsi/client";
     const GOOGLE_CALENDAR_API = "https://www.googleapis.com/calendar/v3";
     const GOOGLE_SCOPE = "https://www.googleapis.com/auth/calendar.events.owned";
     const GOOGLE_TIME_ZONE = "Asia/Tokyo";
+<<<<<<< HEAD
 
     /*
        Google Cloudで発行した「ウェブ アプリ用のクライアントID」を、下の空文字の中へ貼ります。
@@ -20,6 +25,8 @@
        クライアントシークレットは秘密情報なので、このファイルやHTMLへ絶対に書きません。
     */
     const GOOGLE_CLIENT_ID = "";
+=======
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
     const LONG_DATE_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
         year: "numeric",
         month: "long",
@@ -78,6 +85,11 @@
         themeToggle: document.getElementById("themeToggle"),
         themeToggleIcon: document.getElementById("themeToggleIcon"),
         themeToggleText: document.getElementById("themeToggleText"),
+<<<<<<< HEAD
+=======
+        googleClientId: document.getElementById("googleClientId"),
+        saveGoogleClientIdButton: document.getElementById("saveGoogleClientIdButton"),
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
         googleConnectButton: document.getElementById("googleConnectButton"),
         googleImportButton: document.getElementById("googleImportButton"),
         googleDisconnectButton: document.getElementById("googleDisconnectButton"),
@@ -105,6 +117,10 @@
     let tickTimer = null;
     let googleScriptPromise = null;
     let googleTokenClient = null;
+<<<<<<< HEAD
+=======
+    let googleTokenClientId = "";
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
     let googleAccessToken = "";
     let googleTokenExpiresAt = 0;
     let googleImportController = null;
@@ -938,6 +954,7 @@
     /* =======================================================
        10. GoogleカレンダーをOAuth 2.0で安全に読み書きする
        ======================================================= */
+<<<<<<< HEAD
     function isGoogleClientIdConfigured() {
         return typeof GOOGLE_CLIENT_ID === "string"
             && GOOGLE_CLIENT_ID.length > 0
@@ -951,6 +968,20 @@
         const localHosts = ["localhost", "127.0.0.1", "::1", "[::1]"];
         return window.location.protocol === "https:"
             || (window.location.protocol === "http:" && localHosts.includes(window.location.hostname));
+=======
+    function loadGoogleClientId() {
+        try {
+            return window.localStorage.getItem(GOOGLE_CLIENT_ID_KEY) || "";
+        } catch (error) {
+            return "";
+        }
+    }
+
+    function isValidGoogleClientId(value) {
+        return value.length <= 255
+            && !/\s/.test(value)
+            && value.endsWith(".apps.googleusercontent.com");
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
     }
 
     function setGoogleStatus(message, isError = false) {
@@ -964,12 +995,19 @@
 
     function updateGoogleConnectionUi() {
         const isConnected = hasValidGoogleToken();
+<<<<<<< HEAD
         const isConfigured = isGoogleClientIdConfigured();
         const canUseOAuth = canUseGoogleOAuthOnCurrentOrigin();
         elements.googleConnectionBadge.textContent = isConnected ? "接続済み" : "未接続";
         elements.googleConnectionBadge.classList.toggle("is-connected", isConnected);
         elements.googleConnectButton.textContent = isConnected ? "Google接続済み" : "Googleカレンダーと連携";
         elements.googleConnectButton.disabled = isConnected || !isConfigured || !canUseOAuth;
+=======
+        elements.googleConnectionBadge.textContent = isConnected ? "接続中" : "未接続";
+        elements.googleConnectionBadge.classList.toggle("is-connected", isConnected);
+        elements.googleConnectButton.textContent = isConnected ? "Google接続済み" : "Googleに接続";
+        elements.googleConnectButton.disabled = isConnected;
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
         elements.googleImportButton.disabled = !isConnected || Boolean(googleImportController);
         elements.googleDisconnectButton.disabled = !isConnected;
         elements.googleAddChoice.hidden = !isConnected;
@@ -991,6 +1029,40 @@
         }
     }
 
+<<<<<<< HEAD
+=======
+    function saveGoogleClientId() {
+        const clientId = elements.googleClientId.value.trim();
+
+        if (clientId && !isValidGoogleClientId(clientId)) {
+            setGoogleStatus("ウェブ アプリ用の正しいクライアントIDを入力してください。", true);
+            elements.googleClientId.focus();
+            return;
+        }
+
+        try {
+            if (clientId) {
+                window.localStorage.setItem(GOOGLE_CLIENT_ID_KEY, clientId);
+            } else {
+                window.localStorage.removeItem(GOOGLE_CLIENT_ID_KEY);
+            }
+        } catch (error) {
+            setGoogleStatus("クライアントIDをこのブラウザーへ保存できませんでした。", true);
+            return;
+        }
+
+        if (googleTokenClientId && googleTokenClientId !== clientId) {
+            googleTokenClient = null;
+            googleTokenClientId = "";
+            clearGoogleConnectionState();
+        }
+        setGoogleStatus(clientId
+            ? "クライアントIDを保存しました。「Googleに接続」を押してください。"
+            : "保存していたクライアントIDを削除しました。");
+        announce(clientId ? "GoogleのクライアントIDを保存しました。" : "GoogleのクライアントIDを削除しました。");
+    }
+
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
     function loadGoogleIdentityServices() {
         if (window.google && window.google.accounts && window.google.accounts.oauth2) {
             return Promise.resolve();
@@ -1064,13 +1136,28 @@
     }
 
     async function connectGoogleCalendar() {
+<<<<<<< HEAD
         if (!canUseGoogleOAuthOnCurrentOrigin()) {
+=======
+        if (window.location.protocol === "file:") {
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
             setGoogleStatus("Google連携はファイルの直接表示では使えません。localhostまたはHTTPSで開いてください。", true);
             return;
         }
 
+<<<<<<< HEAD
         if (!isGoogleClientIdConfigured()) {
             setGoogleStatus("Google連携は、サイト管理者によるクライアントIDの設定完了後に利用できます。", true);
+=======
+        const clientId = elements.googleClientId.value.trim() || loadGoogleClientId();
+        if (!isValidGoogleClientId(clientId)) {
+            const details = elements.googleClientId.closest("details");
+            if (details) {
+                details.open = true;
+            }
+            setGoogleStatus("先にウェブ アプリ用クライアントIDを設定してください。", true);
+            elements.googleClientId.focus();
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
             return;
         }
 
@@ -1080,19 +1167,34 @@
 
         try {
             await loadGoogleIdentityServices();
+<<<<<<< HEAD
             if (!googleTokenClient) {
                 googleTokenClient = window.google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
+=======
+            if (!googleTokenClient || googleTokenClientId !== clientId) {
+                googleTokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: clientId,
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
                     scope: GOOGLE_SCOPE,
                     callback: handleGoogleTokenResponse,
                     error_callback: handleGooglePopupError
                 });
+<<<<<<< HEAD
             }
             elements.googleConnectButton.disabled = false;
             elements.googleConnectButton.textContent = "Googleカレンダーと連携";
             setGoogleStatus("Googleの画面で、カレンダー予定への許可を確認してください。");
             /* 空文字にすると、同意済みの利用者へ毎回同じ許可画面を強制しません。 */
             googleTokenClient.requestAccessToken({ prompt: "" });
+=======
+                googleTokenClientId = clientId;
+            }
+            elements.googleConnectButton.disabled = false;
+            elements.googleConnectButton.textContent = "Googleに接続";
+            setGoogleStatus("Googleの画面で、カレンダー予定への許可を確認してください。");
+            googleTokenClient.requestAccessToken({ prompt: "consent" });
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
         } catch (error) {
             updateGoogleConnectionUi();
             setGoogleStatus(error && error.message
@@ -1626,6 +1728,10 @@
         elements.modalCloseButton.addEventListener("click", () => closeScheduleModal());
         elements.formCancelButton.addEventListener("click", () => closeScheduleModal());
         elements.scheduleForm.addEventListener("submit", submitSchedule);
+<<<<<<< HEAD
+=======
+        elements.saveGoogleClientIdButton.addEventListener("click", saveGoogleClientId);
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
         elements.googleConnectButton.addEventListener("click", connectGoogleCalendar);
         elements.googleImportButton.addEventListener("click", importVisibleGoogleMonth);
         elements.googleDisconnectButton.addEventListener("click", disconnectGoogleCalendar);
@@ -1676,6 +1782,7 @@
        ======================================================= */
     function init() {
         applyTheme(getInitialTheme());
+<<<<<<< HEAD
         updateGoogleConnectionUi();
         if (!canUseGoogleOAuthOnCurrentOrigin()) {
             setGoogleStatus("Google連携を使うときは、localhostまたはHTTPSでこのページを開いてください。");
@@ -1683,6 +1790,14 @@
             setGoogleStatus("Google連携は現在準備中です。サイト管理者の設定完了後に利用できます。", true);
         } else {
             setGoogleStatus("「Googleカレンダーと連携」を押すと、Googleの正式な許可画面が開きます。");
+=======
+        elements.googleClientId.value = loadGoogleClientId();
+        updateGoogleConnectionUi();
+        if (window.location.protocol === "file:") {
+            setGoogleStatus("Google連携を使うときは、localhostまたはHTTPSでこのページを開いてください。");
+        } else if (elements.googleClientId.value) {
+            setGoogleStatus("Google連携の準備ができています。「Googleに接続」を押してください。");
+>>>>>>> 338bd708a5d8ff8b2e307bb76362d9329a30cb9f
         }
         buildHourButtons();
         registerEvents();
